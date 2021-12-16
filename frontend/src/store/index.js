@@ -103,8 +103,9 @@ export default new Vuex.Store({
       //console.log('model_info', data)
     },
     setDataTable(state, data) {
-      const features = data.map(d => d[0])
-      const values = data.map(d => d[1])
+      const features = data.features
+      const values = data.values
+      const shap = data.shap
       state.data_header = features.map(d => ({ text: d, value: d }))
       state.data_table = values[0].map((_, index) => {
         let ret = {id: `customer #${index}`, _id: index }
@@ -113,6 +114,7 @@ export default new Vuex.Store({
         }
         return ret
       })
+      state.data_shaps = shap
       //document.getElementById("feature_view").appendChild(summary)
     },
     updateTooltip(state, attr) {
