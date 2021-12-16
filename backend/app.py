@@ -163,7 +163,14 @@ loader = DataLoader(data, model, 'Creditability')
 
 @app.route('/api/data_table', methods=["POST"])
 def get_data():
-    response = [[feature, original_data[feature].values] for feature in original_data.columns]
+    features = [feature for feature in original_data.columns]
+    values = [original_data[feature].values for feature in original_data.columns]
+    shap = [loader.shap_values[i].values for i in range(len(loader.shap_values))]
+    response = {
+        'features' : features,
+        'values': values,
+        'shap': shap,
+    }
     return json.dumps(response, cls=NpEncoder)
 
 @app.route('/api/samples', methods=["POST"])
