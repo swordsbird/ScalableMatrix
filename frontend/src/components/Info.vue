@@ -49,12 +49,8 @@ export default {
       await this.renderView();
     },
   },
-  watch: {
-    async render(val) {
-      if (val) {
-        await this.renderView();
-      }
-    },
-  },
+  mounted () {
+    this.renderView()
+  }
 };
 </script>

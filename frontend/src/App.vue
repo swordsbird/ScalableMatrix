@@ -16,9 +16,11 @@
             md="2"
             class="pa-1"
           >
-            <!-- <v-card class="mx-auto" id="feature_view" max-height="100%" style="overflow-y: scroll;">
-              <Feature :render="initilized"/>
-            </v-card> -->
+            <v-card class="mx-auto" id="feature_view" height="100%">
+              <div style="height: 100%">
+                <Feature v-if="initilized"/>
+              </div>
+            </v-card>
           </v-col>
           <v-col
             cols="8"
@@ -39,7 +41,7 @@
             class="pa-1"
           >
             <v-card class="mx-auto" height="100%">
-              <div style="height: calc(100% - 64px); position: relative;">
+              <div style="height: 100%; position: relative;">
                 <Info :render="initilized"/>
               </div>
             </v-card>
@@ -191,7 +193,4 @@ histogram debug
   }
 }
 
-#feature_view {
-  overflow: scroll;
-}
 </style>
