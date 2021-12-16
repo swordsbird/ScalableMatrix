@@ -25,6 +25,78 @@ app = Flask(__name__,
             template_folder = "./dist")
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
+reassign = {
+    'Creditability' : ['No', 'Yes' ], 
+    'Payment Status of Previous Credit' : [
+        'no credits taken/ all credits paid back duly',
+        'all credits at this bank paid back duly',
+        'existing credits paid back duly till now',
+        'delay in paying off in the past',
+        'critical account/ other credits existing (not at this bank)',
+    ],
+    'Purpose' : [
+        'car (new)',
+        'car (used)',
+        'furniture/equipment',
+        'radio/television',
+        'domestic appliances',
+        'repairs',
+        'education',
+        '(vacation - does not exist?)',
+        'retraining',
+        'business',
+        'others'
+    ],
+    'Value Savings/Stocks': [
+        '< 100 DM',
+        '100 <= ... < 500 DM',
+        '500 <= ... < 1000 DM',
+        '>= 1000 DM',
+        'unknown/ no savings account',
+    ],
+    'Length of current employment': [
+        'unemployed',
+        '< 1 year',
+        '1 <= ... < 4 years',
+        '4 <= ... < 7 years',
+        '>= 7 years'
+    ],
+    'Sex & Marital Status': [
+        'male : divorced/separated',
+        'female : divorced/separated/married',
+        'male : single',
+        'male : married/widowed',
+        'female : single'
+    ],
+    'Guarantors': [
+        'none',
+        'co-applicant',
+        'guarantor'
+    ],
+    'Most valuable available asset': [
+        'real estate',
+        'building society savings agreement/ life insurance',
+        'car or other',
+        'unknown / no property'
+    ],
+    'Other installment plans': ['bank', 'stores', 'none'],
+    'Type of apartment': ['rent', 'own', 'for free'],
+    'Occupation': [
+        'unemployed/ unskilled - non-resident',
+        'unskilled - resident',
+        'skilled employee / official',
+        'management/ self-employed/ highly qualified employee/ officer'
+    ],
+    'Account Balance': [
+        '... < 0 DM',
+        '0 <= ... < 200 DM',
+        '... >= 200 DM / salary assignments for at least 1 year',
+        'no checking account',
+    ],
+    'Telephone': ['No', 'Yes'],
+    'Foreign Worker': ['Yes', 'No'],
+}
+
 class DataLoader():
     def __init__(self, data, model, target):
         self.data_table = data
@@ -36,13 +108,21 @@ class DataLoader():
             self.path_index[path['name']] = index
         self.selected_indexes = self.model['selected']
         self.features = self.model['features']
+        for index, feature in enumerate(self.features):
+            if feature['name'] in reassign:
+                feature['values'] = reassign[feature['name']]
+            else:
+                feature['values'] = feature['range']
         self.X = self.data_table.drop(target, axis=1).values
         self.y = self.data_table[target].values
 
-        path_mat = np.array([path['sample'] for path in self.paths])
+        path_mat = np.array([path['sample'] + [path['output']] for path in self.paths])
+        np.seterr(divide='ignore',invalid='ignore')
+        path_mat = path_mat.astype(np.float32)
         tree = AnnoyIndex(len(path_mat[0]), 'euclidean')
         for i in range(len(path_mat)):
-            path_mat[i] /= np.sum(path_mat[i])
+            s = np.sum(path_mat[i, :-1])
+            path_mat[i, :-1] /= s
             tree.add_item(i, path_mat[i])
         tree.build(10)
         self.tree = tree
@@ -73,15 +153,17 @@ class DataLoader():
                 path['children'].append(i)
         for i, name in enumerate(self.selected_indexes):
             path = self.paths[self.path_index[name]]
+    def model_info(self):
+        return self.model['model_info']
 
+original_data = pd.read_csv('../model/data/german_detailed.csv')
 data = pd.read_csv('../model/data/german.csv')
-model = pickle.load(open('../model/output/german.pkl', 'rb'))
+model = pickle.load(open('../model/output/german1210.pkl', 'rb'))
 loader = DataLoader(data, model, 'Creditability')
 
 @app.route('/api/data_table', methods=["POST"])
 def get_data():
-    data2 = pd.read_csv('../model/data/german1.csv')
-    response = [[feature, data2[feature].values] for feature in data2.columns]
+    response = [[feature, original_data[feature].values] for feature in original_data.columns]
     return json.dumps(response, cls=NpEncoder)
 
 @app.route('/api/samples', methods=["POST"])
@@ -110,28 +192,34 @@ def get_explore_rules():
     nns = []
     for name in idxs:
         j = loader.path_index[name]
-        neighbors = loader.tree.get_nns_by_item(j, K)
-        neighbors = [i for i in neighbors if not loader.paths[i]['represent']]
+        neighbors = loader.paths[j]['children']
+        #neighbors = [i for i in neighbors if not loader.paths[i]['represent']]
         nns += [j] + neighbors
     nns_set = set()
+    last_rep = -1
     for i in nns:
         if i in nns_set:
             continue
         nns_set.add(i)
         path = loader.paths[i]
+        if path['represent']:
+            last_rep = i
         response.append({
             'name': path['name'],
             'tree_index': path['tree_index'],
             'rule_index': path['rule_index'],
             'represent': path['represent'],
+            'father': last_rep,
             'range': path['range'],
             'LOF': path['lof'],
+            'num_children': len(path['children']),
             'distribution': path['distribution'],
             'coverage': path['coverage'] / len(loader.X),
             'output': path['output'],
             'samples': np.flatnonzero(path['sample']).tolist(),
         })
-    response = response[:N]
+    print('response', len(response))
+    #response = response[:N]
     return json.dumps(response, cls=NpEncoder)
 
 @app.route('/api/rule_samples', methods=["POST"])
@@ -173,6 +261,10 @@ def get_selected_rules():
             'samples': np.flatnonzero(path['sample']).tolist(),
         })
     return json.dumps(response, cls=NpEncoder)
+
+@app.route('/api/model_info')
+def get_model_info():
+    return json.dumps(loader.model_info())
 
 '''
 @app.route('/', defaults={'path': ''})

@@ -133,8 +133,14 @@ class Extractor:
 
         m += (pulp.lpSum([var[j] for j in range(len(self.paths))]) <= max_num)
         # 筛选出不超过max_num条规则
+        y = self.predict_raw(self.X_raw, self.paths)
+        sy = np.abs(y)
+        sy.sort()
+        sy10 = sy[len(sy) // 10] / 100
+        print('margin', sy10)
 
         for j in range(len(w)):
+            #min(sy10, abs(y[j]) * 0.5)
             m += (var[j + len(self.paths)] >= 1000 + tau - pulp.lpSum(
                 [var[k] * Mat[k][j] for k in range(len(self.paths))]))
             m += (var[j + len(self.paths)] >= 1000)

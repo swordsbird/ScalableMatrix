@@ -79,10 +79,7 @@ class ExpModel:
                 self.target = 'Creditability'
                 parameters = {
                     'random_state': random_state,
-                    #'criterion': 'entropy',
                     'max_depth': 12,
-                    #'max_features': 'auto',
-                    #'oob_score': True,
                     'n_estimators': 150,
                     'max_leaf_nodes': 100,
                     'min_samples_split': 6,
@@ -134,7 +131,7 @@ class ExpModel:
                 data_table = pd.read_csv('data/wine.csv')
                 X = data_table.drop(self.target, axis=1).values
                 y = data_table[self.target].values
-                y = np.array([0 if v < 5 else 1 for v in y])
+                y = np.array([0 if v < 6 else 1 for v in y])
             self.data_table = data_table
             self.X = X
             self.y = y
@@ -222,8 +219,9 @@ class ExpModel:
 num_of_rules = [50, 100, 200, 400, 800, 1600]
 tau_of_rules = [1, 1, 1.5, 1.75, 2.0, 2.5]
 exp_models = ['RF']
-exp_datasets = ['german_credit', 'abalone', 'bankruptcy']
-#exp_datasets = ['breast_cancer', 'diabetes', 'german_credit', 'wine', 'abalone', 'bankruptcy']
+#exp_datasets = ['german_credit', 'abalone', 'bankruptcy']
+exp_datasets = ['wine']
+#exp_datasets = ['abalone', 'diabetes', 'german_credit', 'wine', 'breast_cancer', 'bankruptcy']
 exp_enable_oversampling = {
     'breast_cancer': True,
     'diabetes': True,
@@ -282,4 +280,4 @@ for oversampling in [0, 1]:
                     })
                 exp.next_fold()
             output_data['performance'] = exp.summary()
-            pickle.dump(output_data, open('output2/%s.pkl'%(dataset), 'wb'))
+            pickle.dump(output_data, open('output/%s.pkl'%(dataset), 'wb'))

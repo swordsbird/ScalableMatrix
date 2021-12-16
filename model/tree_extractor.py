@@ -1,6 +1,7 @@
 
 from os import path
 from copy import deepcopy
+import numpy as np
 
 def visit_boosting_tree(tree, path = {}):
     if 'decision_type' not in tree:
@@ -61,6 +62,22 @@ def visit_decision_tree(tree, index = 0, path = {}):
 
     return ret
 
+def assign_samples(paths, data):
+    X, y = data
+    for path in paths:
+        ans = 2 * y - 1
+        m = path['range']
+        for key in m:
+            ans = ans * (X[:, int(key)] >= m[key][0]) * (X[:, int(key)] < m[key][1])
+        [idx] = np.nonzero(ans)
+        path['sample'] = (np.abs(ans)).tolist()
+        path['sample_id'] = idx.tolist()
+        pos = (ans == 1).sum()
+        neg = (ans == -1).sum()
+        path['distribution'] = [neg, pos]
+        path['output'] = int(np.argmax(path['distribution']))
+        path['coverage'] = 1.0 * len(idx) / X.shape[0]
+
 def assign_value_for_random_forest(paths, data):
     X, y = data
     for path in paths:
@@ -85,15 +102,25 @@ def assign_value_for_random_forest(paths, data):
 def path_extractor(model, model_type, data = None):
     if model_type == 'random forest' :
         ret = []
-        for estimator in model.estimators_:
-            ret += path_extractor(estimator, 'decision tree')
+        for tree_index, estimator in enumerate(model.estimators_):
+            treepaths = path_extractor(estimator, 'decision tree')
+            for rule_index, path in enumerate(treepaths):
+                path['tree_index'] = tree_index
+                path['rule_index'] = rule_index
+                path['name'] = 'r' + str(tree_index) + '_' + str(rule_index)
+            ret += treepaths
         assign_value_for_random_forest(ret, data)
         return ret
     elif model_type == 'lightgbm':
         ret = []
         info = model._Booster.dump_model()
-        for tree in info['tree_info']:
-            ret += visit_boosting_tree(tree['tree_structure'])
+        for tree_index, tree in enumerate(info['tree_info']):
+            treepaths = visit_boosting_tree(tree['tree_structure'])
+            for rule_index, path in enumerate(treepaths):
+                path['tree_index'] = tree_index
+                path['rule_index'] = rule_index
+                path['name'] = 'r' + str(tree_index) + '_' + str(rule_index)
+            ret += treepaths
         return ret
     elif model_type == 'decision tree':
         return visit_decision_tree(model.tree_)

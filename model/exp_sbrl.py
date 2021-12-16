@@ -27,7 +27,7 @@ class ExpModel:
                 self.target = 'diagnosis'
                 parameters = {
                         'n_estimators': 200,
-                        'max_depth': 10,
+                        'max_depth': 4,
                         'random_state': random_state,
                         'max_features': None,
                 }
@@ -39,6 +39,7 @@ class ExpModel:
                 self.target = 'Rings'
                 parameters = {
                     'n_estimators': 80,
+                    'max_depth': 4,
                     # 'max_depth': 30,
                     'random_state': 10,
                     'max_features': 'auto',
@@ -54,8 +55,8 @@ class ExpModel:
             elif self.dataset == 'bankruptcy':
                 self.target = 'Bankrupt?'
                 parameters = {
-                        'n_estimators': 150,
-                        'max_depth': 15,
+                        'n_estimators': 250,
+                        'max_depth': 4,
                         'random_state': random_state,
                 }
 
@@ -66,7 +67,7 @@ class ExpModel:
                 self.target = 'class'
                 parameters = {
                     'n_estimators': 100,
-                    'max_depth': 10,
+                    'max_depth': 4,
                     'random_state': random_state,
                     'max_features': None,
                 }
@@ -79,7 +80,7 @@ class ExpModel:
                 parameters = {
                     'random_state': random_state,
                     #'criterion': 'entropy',
-                    'max_depth': 12,
+                    'max_depth': 4,
                     #'max_features': 'auto',
                     #'oob_score': True,
                     'n_estimators': 150,
@@ -123,8 +124,8 @@ class ExpModel:
             elif self.dataset == 'wine':
                 self.target = 'quality'
                 parameters = {
-                    'n_estimators': 150,
-                    'max_depth': 13,
+                    'n_estimators': 200,
+                    'max_depth': 3,
                     'random_state': random_state,
                     'max_features': 'auto',
                     'oob_score': True,
@@ -133,7 +134,7 @@ class ExpModel:
                 data_table = pd.read_csv('data/wine.csv')
                 X = data_table.drop(self.target, axis=1).values
                 y = data_table[self.target].values
-                y = np.array([0 if v < 5 else 1 for v in y])
+                y = np.array([0 if v < 6 else 1 for v in y])
             self.data_table = data_table
             self.X = X
             self.y = y
@@ -218,12 +219,12 @@ class ExpModel:
         return paths
 
 
-num_of_rules = [100, 200]
-n_round = 1
+num_of_rules = [25, 50, 100, 200]
+n_round = 4
 exp_models = ['RF']
 #exp_datasets = ['german_credit', 'abalone', 'bankruptcy']
-#exp_datasets = ['breast_cancer', 'diabetes', 'german_credit', 'wine', 'abalone', 'bankruptcy']
-exp_datasets = ['wine', 'abalone']
+exp_datasets = ['breast_cancer', 'diabetes', 'wine', 'abalone', 'german_credit', 'bankruptcy']
+#exp_datasets = ['wine', 'abalone']
 
 has_file = os.path.exists('summary_sbrl.csv')
 f = open('summary_sbrl.csv', 'a')
@@ -249,7 +250,7 @@ for oversampling in [4]:
                 for it in range(len(num_of_rules)):
                     n = num_of_rules[it]
                     for rd in range(n_round):
-                        sbrl = make_sbrl(paths, X2, exp.clf.predict(X2), num_of_rules[it], 2)
+                        sbrl = make_sbrl(paths, X2, exp.clf.predict(X2), num_of_rules[it], 1)
                         X_train = exp.X_train
                         X_test = exp.X_test
                         y_train = exp.y_train

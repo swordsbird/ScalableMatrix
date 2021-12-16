@@ -13,122 +13,134 @@
         <v-row>
           <v-col
             cols="12"
-            md="4"
+            md="2"
+            class="pa-1"
           >
-            <v-card class="mx-auto" 
-            >
-              <v-tabs
-                v-model="tab"
-                background-color="transparent"
-                color="primary"
-              >
-                <v-tab key="Features" class="text-h6">
-                  Data Attributes
-                </v-tab>
-              </v-tabs>
-
-              <v-tabs-items v-model="tab">
-                <v-tab-item>
-                  <v-card flat id="feature_view">
-                    <v-img width="1000" src="./features.png"></v-img>
-                  </v-card>
-                </v-tab-item>
-              </v-tabs-items>
+            <v-card class="mx-auto" id="feature_view" :max-height="topview_height">
+              <Feature :render="initilized"/>
+              <!--v-img src="./features.png"></v-img-->
             </v-card>
           </v-col>
           <v-col
             cols="12"
             md="8"
+            class="pa-1"
           >
             <v-card
-              class="mx-auto"
+              class="mx-auto" :max-height="topview_height"
             >
-            <!--
-              <v-list-item two-line>
-                <v-list-item-content>
-                  <v-list-item-title class="text-h5">
-                    Rule Matrix
-                  </v-list-item-title>
-                  <v-list-item-subtitle>Mon, 12:30 PM, Mostly sunny</v-list-item-subtitle>
-                </v-list-item-content>
-              </v-list-item>
-              -->
-              
-              <v-tabs
-                background-color="transparent"
-                color="primary"
-              >
-                <v-tab key="Features" class="text-h6">
-                  Model Rules
-                </v-tab>
-              </v-tabs>
               <Matrix/>
+            </v-card>
+          </v-col>
+          <v-col
+            cols="12"
+            md="2"
+            class="pa-1"
+          >
+            <v-card
+              class="mx-auto" :height="topview_height"
+            >
+              <Info :render="initilized"/>
             </v-card>
           </v-col>
         </v-row>
         <v-row>
-          <v-col
+          <v-col class="pt-1"
             cols="12"
             md="12"
           >
-            <v-card class="mx-auto mt-2" 
-            >
-              <v-tabs
-                v-model="tab"
-                background-color="transparent"
-                color="primary"
-              >
-                <v-tab key="Data Table" class="text-h6">
-                  Data Table
-                </v-tab>
-              </v-tabs>
-
-              <v-tabs-items v-model="tab">
-                <v-tab-item>
-                  <v-card flat>
-                    <v-data-table
-                      :headers="data_header"
-                      :items="data_table"
-                      :items-per-page="20"
-                      dense
-                      class="elevation-1"
-                    ></v-data-table>
-                  </v-card>
-                </v-tab-item>
-              </v-tabs-items>
+            <v-card flat>
+              <svg ref="tableview"></svg>
             </v-card>
           </v-col>
         </v-row>
       </v-container>
+      <div class="svg-tooltip"
+      :style="{
+        left: `${Math.min(page_width - tooltipview.width, tooltipview.x + 10)}px`,
+        top: `${tooltipview.y - 10}px`,
+        'max-width': `${tooltipview.width}px`,
+        visibility: tooltipview.visibility
+      }">{{ tooltipview.content }}
+      </div>
     </v-main>
-    <div class="svg-tooltip"></div>
   </v-app>
 </template>
 
 <script>
 import Matrix from './components/Matrix.vue'
+import Feature from './components/Feature.vue'
+import Info from './components/Info.vue'
 import { mapActions, mapGetters, mapState } from "vuex"
+import SVGTable from './libs/svgtable'
+import * as d3 from 'd3'
+
 
 export default {
   name: 'App',
   components: {
-    Matrix
+    Matrix,
+    Feature,
+    Info
   },
   computed: {
-    ...mapGetters(['view_width']),
-    ...mapState(['data_table', 'data_header'])
+    ...mapGetters(['topview_height', 'filtered_data']),
+    ...mapState(['tooltipview', 'highlighted_sample', 'data_table', 'crossfilter', 'data_header', 'page_width', 'matrixview'])
+  },
+  watch: {
+    crossfilter(val) {
+      this.renderDataTable()
+    },
+    highlighted_sample(val) {
+      this.renderDataTable()
+    }
   },
   methods: {
-    ...mapActions(['fetchRawdata', 'updateLayout', 'updateWidth', 'setReady']),
+    ...mapActions(['highlightSample', 'fetchRawdata', 'updateMatrixLayout', 'updatePageSize', 'setReady']),
     onResize(){
-      // const width = document.getElementsByTagName('body')[0].getBoundingClientRect().width
-      // this.updateWidth(width)
+      const width = document.documentElement.clientWidth
+      const height = document.documentElement.clientHeight
+      this.updatePageSize({ width, height })
+      this.renderDataTable()
+    },
+    renderDataTable() {
+      const width = this.$refs.tableview.parentNode.getBoundingClientRect().width
+      const height = 250
+
+      const svg = d3.select(this.$refs.tableview)
+          .attr("width", width)
+          .attr("height", height);
+
+      svg.selectAll('*').remove()
+
+      const reordered_data = 
+        this.highlighted_sample ? (
+          this.filtered_data.filter(d => this.highlighted_sample == d._id).concat(
+            this.filtered_data.filter(d => this.highlighted_sample != d._id)
+          )
+        ) : this.filtered_data
+
+      new SVGTable(svg)
+          .size([width, height])
+          .fixedRows(this.highlighted_sample ? 1 : 0)
+          .fixedColumns(1)
+          .rowsPerPage(25)    
+          .defaultNumberFormat(",.0d")
+          .style({ border: false })
+          .data(reordered_data)  
+          .onclick((ctx, cell) => {
+            const sample_id = this.filtered_data[cell.rowIndex]._id
+            this.highlightSample(sample_id)
+          })
+          //.onhighlight((ctx, d) => { console.log(ctx, ) })
+          .render();
     }
   },
   data: () => {
     return {
       drawer: null,
-      tab: 'Data Table'
+      tab: 'Data Table',
+      initilized: false,
     }
   },
   beforeDestroy () {
@@ -138,41 +150,57 @@ export default {
   async mounted() {
     await this.fetchRawdata()
     await this.setReady()
-    await this.updateLayout()
+    await this.updateMatrixLayout()
     window.addEventListener('resize', this.onResize, { passive: true })
     this.onResize()
+    this.renderDataTable()
+    this.initilized = true
   }
 }
+/*
+离散值 留出空隙 不要连续
+最下面加一条横线
+
+Not 空心 / Yes 实心
+sync with MingYao
+
+crossfilter
+规则filter，有个明确的confirm button
+histogram debug
+*/
 </script>
 
 <style lang="scss">
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
   background: #f7f7f7;
+  height: 100%;
+  overflow-y: hidden;
 }
 
 .svg-tooltip {
   font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple   Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  background: rgba(69,77,93,.9);
+  background: rgba(255, 255, 255, .95);
   border-radius: .1rem;
-  color: #fff;
-  display: block;
-  font-size: 11px;
-  max-width: 320px;
-  padding: .2rem .4rem;
+  border: 1.5px solid #333;
+  color: #333;
+  font-size: 16px;
+  word-wrap:break-word;
+  padding: .4rem .6rem;
   position: absolute;
-  text-overflow: ellipsis;
-  white-space: pre;
   z-index: 300;
-  visibility: hidden;
 }
 
 @media (min-width: 2560px) {
   .container {
       max-width: 2560px!important;
   }
+}
+
+#feature_view {
+  overflow: scroll;
 }
 </style>

@@ -16,6 +16,7 @@ class SBRLResult():
         self.paths = []
         for i in range(len(ids)):
             self.paths.append({
+                'original': paths[ids[i]],
                 'range': paths[ids[i]]['range'],
                 'output': paths[ids[i]]['value'] > 0,#np.argmax(outputs[i]),
             })
@@ -41,10 +42,10 @@ def make_sbrl(paths, X, y, lam = 20, eta = 2.0):
         label_file.write(s)
     data_file.close()
     label_file.close()
-    rule_ids, outputs, rule_str = pysbrl.train_sbrl(data_file.name, label_file.name, lam, eta, max_iters=3000)
+    rule_ids, outputs, rule_str = pysbrl.train_sbrl(data_file.name, label_file.name, lam, n_chains=50, eta=1, max_iters=20000)
     #for i in range(min(10, len(rule_ids))):
     #    print(outputs[i], paths[rule_ids[i]]['value'], paths[rule_ids[i]]['confidence'])
-    all_bits = np.ones(len(X))
+    all_bits = np.zeros(len(X))
     for i in rule_ids:
         bits = path_coverage(paths[i], X)
         all_bits = all_bits + bits
@@ -57,6 +58,7 @@ def make_sbrl(paths, X, y, lam = 20, eta = 2.0):
         if curr_count > default_count:
             default_count = curr_count
             default_output = output
+    print('all_uncover_bits', np.sum(all_uncover_bits), len(all_uncover_bits))
     return SBRLResult(paths, rule_ids, outputs, default_output)
 
 def predict(X, sbrl):
@@ -73,8 +75,10 @@ def predict(X, sbrl):
         left -= current
     Y += left * sbrl.default
     Y = np.where(Y > 0, 1, 0)
-    return Y
+    return Y, np.sum(left)
 
 def test_sbrl(sbrl, X, y, log = False):
-    y1 = predict(X, sbrl)
+    y1, not_covered = predict(X, sbrl)
+    if log:
+        print(not_covered)
     return np.sum((y == y1)) / len(y1)
