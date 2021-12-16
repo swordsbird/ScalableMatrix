@@ -711,8 +711,8 @@ export default {
           .data(d => d.elements)
           .attr('x', d => d.x0 + 0.75)
           .attr('y', 1)
-          .attr('width', d => d.x1 - d.x0 - 1.5)
-          .attr('height', d => d.h - 1.5)
+          .attr('width', d => Math.max(d.x1 - d.x0 - 1.5, 0))
+          .attr('height', d => Math.max(d.h - 1.5, 0))
           .attr('fill', d => {
               if (self.matrixview.is_zoomed && d.represent) {
                 return d3.interpolateLab('#ccc', d.fill)(0.2)
