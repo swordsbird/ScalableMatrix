@@ -1,5 +1,5 @@
 <template>
-  <div class="matrix-container" ref="matrix_parent">
+  <div ref="matrix_parent" :style="`position: absolute; ${positioning}`" v-resize="onResize">
     <!--div class="text-center" v-if="matrixview.order_keys.length > 0">
       Order by:
       <v-btn
@@ -13,7 +13,7 @@
         {{ item.name }} {{ item.order == 1 ? '' : '(Descending)'}}
       </v-btn>
     </div-->
-    <svg class="matrixdiagram">
+    <svg class="matrixdiagram" style="width: 100%; height: 100%">
       <clipPath id="rule_clip">
         <rect :width="`${matrixview.width + 5}`" 
           :height="`${matrixview.height - matrixview.margin.bottom - matrixview.margin.top + 5}`">
@@ -30,7 +30,7 @@
         </g>
       </g>
       <g class="status_container" 
-        :transform="`translate(${matrixview.margin.left},${matrixview.height - matrixview.margin.bottom})`">
+        :transform="`translate(${matrixview.margin.left}, ${matrixview.height - matrixview.margin.bottom})`">
       </g>
       <g class="scrollbar_container"></g>
     </svg>
@@ -45,6 +45,12 @@ import Scrollbar from "../libs/scrollbar";
 
 export default {
   name: 'Matrix',
+  props: {
+    positioning: {
+      default: 'top: 0px; left: 0px; right: 0px; bottom: 0px',
+      type: String
+    }
+  },
   data() {
     return {
       current_col: null,
@@ -66,30 +72,31 @@ export default {
       this.render()
     }
   },
-  beforeDestroy () {
-    if (typeof window === 'undefined') return
-    window.removeEventListener('resize', this.onResize, { passive: true })
-  },
-  async mounted() {
-    window.addEventListener('resize', this.onResize, { passive: true })
-    this.onResize()
-  },
+  // beforeDestroy () {
+  //   if (typeof window === 'undefined') return
+  //   window.removeEventListener('resize', this.onResize, { passive: true })
+  // },
+  // async mounted() {
+  //   window.addEventListener('resize', this.onResize, { passive: true })
+  //   this.onResize()
+  // },
   methods: {
-    ...mapActions([ 'tooltip', 'orderColumn', 'orderRow', 'showRepresentRules', 'showExploreRules', 'updateMatrixWidth' ]),
+    ...mapActions([ 'tooltip', 'orderColumn', 'orderRow', 'showRepresentRules', 'showExploreRules', 'updateMatrixSize' ]),
     onResize(){
       const width = this.$refs.matrix_parent.getBoundingClientRect().width
-      this.updateMatrixWidth(width)
+      const height = this.$refs.matrix_parent.getBoundingClientRect().height
+      this.updateMatrixSize({ width, height })
     },
     render() {
       const self = this
       // const min_confidence = 5
       const matrixview = this.matrixview
-      const { margin, width, height } = matrixview
+      // const { margin, width, height } = matrixview
       const header_offset = { x: 75, y: 45 } //this.primary.has_primary_key ? 20 : 5 }
 
       const svg = d3.select(".matrixdiagram")
-        .attr('width', width)
-        .attr('height', height)
+        .attr('width', this.matrixview.width)
+        .attr('height', this.matrixview.height)
 
       /*<svg style="width:24px;height:24px" viewBox="0 0 24 24">
     <path fill="currentColor" d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
@@ -231,23 +238,23 @@ export default {
           .attr('font-family', 'Arial')
           .text('cover num')
 
-        const status_text = status_container.append('g')
-          .attr('class', 'status')
-          .attr('transform', 'translate(0, 70)')
-          .style('user-select', 'none')
+        // const status_text = status_container.append('g')
+        //   .attr('class', 'status')
+        //   .attr('transform', 'translate(0, 70)')
+        //   .style('user-select', 'none')
 
-        status_text.append('text')
-          .attr('dx', layout.width + self.matrixview.margin.right - self.model_info.length * 8 + 30)
-          .attr('font-size', '16px')
-          .attr('font-family', 'Arial')
-          .text(self.model_info)
+        // status_text.append('text')
+        //   .attr('dx', layout.width + self.matrixview.margin.right - self.model_info.length * 8 + 30)
+        //   .attr('font-size', '16px')
+        //   .attr('font-family', 'Arial')
+        //   .text(self.model_info)
 
-        status_text.append('text')
-          .attr('dx', layout.width + self.matrixview.margin.right - self.rule_info.length * 8)
-          .attr('font-size', '16px')
-          .attr('font-family', 'Arial')
-          .attr('dy', 16)
-          .text(self.rule_info)
+        // status_text.append('text')
+        //   .attr('dx', layout.width + self.matrixview.margin.right - self.rule_info.length * 8)
+        //   .attr('font-size', '16px')
+        //   .attr('font-family', 'Arial')
+        //   .attr('dy', 16)
+        //   .text(self.rule_info)
 
         const status_orders = status_container.select('g.order')
           .data(self.matrixview.order_keys).enter()

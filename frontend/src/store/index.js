@@ -33,11 +33,10 @@ export default new Vuex.Store({
       margin: {
         top: 130,
         right: 150,
-        bottom: 100,
+        bottom: 60,
         left: 90,
       },
       width: 1500,
-      max_width: 1500,
       height: 800,
       coverage_width: 50,
       glyph_width: 60,
@@ -115,6 +114,8 @@ export default new Vuex.Store({
         return ret
       })
       state.data_shaps = shap
+      // console.log(shap)
+      // console.log(values)
       //document.getElementById("feature_view").appendChild(summary)
     },
     updateTooltip(state, attr) {
@@ -154,13 +155,9 @@ export default new Vuex.Store({
         })
       }
     },
-    changePageSize(state, { width, height }) {
-      state.page_width = width
-      state.page_height = height
-      state.matrixview.height = height - state.tableview.height - 64
-    },
-    changeMatrixWidth(state, width) {
-      state.matrixview.width = width - state.matrixview.padding * 2
+    changeMatrixSize (state, { width, height }) {
+      state.matrixview.width = width
+      state.matrixview.height = height
     },
     ready(state, status) {
       state.is_ready = status
@@ -674,8 +671,8 @@ export default new Vuex.Store({
     async updateMatrixWidth({ commit }, width) {
       commit('changeMatrixWidth', width)
     },
-    async updatePageSize({ commit }, { width, height }) {
-      commit('changePageSize', { width, height })
+    async updateMatrixSize({ commit }, { width, height }) {
+      commit('changeMatrixSize', { width, height })
       commit('updateMatrixLayout')
     },
     async updateRulefilter({ commit, state }, filter) {

@@ -1,6 +1,6 @@
 <template>
-  <div class="info-container">
-    <svg ref="info_parent"></svg>
+  <div class="info-container" :style="`position: absolute; ${positioning}`">
+    <svg ref="info_parent" style="width: 100%"></svg>
   </div>
 </template>
 
@@ -15,7 +15,13 @@ export default {
     return {
     };
   },
-  props: ["render"],
+  props: {
+    positioning: {
+      default: 'top: 0px; left: 0px; right: 0px; bottom: 0px',
+      type: String
+    },
+    render: Boolean
+  },
   computed: {
     ...mapState(["data_table", "data_header"]),
   },

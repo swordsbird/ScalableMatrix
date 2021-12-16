@@ -9,42 +9,43 @@
     </v-system-bar>
 
     <v-main>
-      <v-container fluid>
-        <v-row>
+      <v-container fluid style="height: 100%">
+        <v-row style="height: 100%">
           <v-col
-            cols="12"
+            cols="2"
             md="2"
             class="pa-1"
           >
-            <v-card class="mx-auto" id="feature_view" :max-height="topview_height">
+            <!-- <v-card class="mx-auto" id="feature_view" max-height="100%" style="overflow-y: scroll;">
               <Feature :render="initilized"/>
-              <!--v-img src="./features.png"></v-img-->
-            </v-card>
+            </v-card> -->
           </v-col>
           <v-col
-            cols="12"
+            cols="8"
             md="8"
             class="pa-1"
           >
-            <v-card
-              class="mx-auto" :max-height="topview_height"
-            >
-              <Matrix/>
+            <v-card class="mx-auto" height="100%">
+              <div style="height: calc(100% - 64px); position: relative;">
+                <Matrix v-if="initilized"/>
+              </div>
+              <div v-if="initilized">{{model_info}}</div>
+              <div v-if="initilized">{{rule_info}}</div>
             </v-card>
           </v-col>
           <v-col
-            cols="12"
+            cols="2"
             md="2"
             class="pa-1"
           >
-            <v-card
-              class="mx-auto" :height="topview_height"
-            >
-              <Info :render="initilized"/>
+            <v-card class="mx-auto" height="100%">
+              <div style="height: calc(100% - 64px); position: relative;">
+                <Info :render="initilized"/>
+              </div>
             </v-card>
           </v-col>
         </v-row>
-        <v-row>
+        <!-- <v-row>
           <v-col class="pt-1"
             cols="12"
             md="12"
@@ -53,16 +54,16 @@
               <svg ref="tableview"></svg>
             </v-card>
           </v-col>
-        </v-row>
+        </v-row> -->
       </v-container>
-      <div class="svg-tooltip"
+      <!-- <div class="svg-tooltip"
       :style="{
         left: `${Math.min(page_width - tooltipview.width, tooltipview.x + 10)}px`,
         top: `${tooltipview.y - 10}px`,
         'max-width': `${tooltipview.width}px`,
         visibility: tooltipview.visibility
       }">{{ tooltipview.content }}
-      </div>
+      </div> -->
     </v-main>
   </v-app>
 </template>
@@ -84,25 +85,19 @@ export default {
     Info
   },
   computed: {
-    ...mapGetters(['topview_height', 'filtered_data']),
+    ...mapGetters(['model_info', 'rule_info']),
     ...mapState(['tooltipview', 'highlighted_sample', 'data_table', 'crossfilter', 'data_header', 'page_width', 'matrixview'])
   },
   watch: {
     crossfilter(val) {
-      this.renderDataTable()
+      // this.renderDataTable()
     },
     highlighted_sample(val) {
-      this.renderDataTable()
+      // this.renderDataTable()
     }
   },
   methods: {
     ...mapActions(['highlightSample', 'fetchRawdata', 'updateMatrixLayout', 'updatePageSize', 'setReady']),
-    onResize(){
-      const width = document.documentElement.clientWidth
-      const height = document.documentElement.clientHeight
-      this.updatePageSize({ width, height })
-      this.renderDataTable()
-    },
     renderDataTable() {
       const width = this.$refs.tableview.parentNode.getBoundingClientRect().width
       const height = 250
@@ -143,17 +138,13 @@ export default {
       initilized: false,
     }
   },
-  beforeDestroy () {
-    if (typeof window === 'undefined') return
-    window.removeEventListener('resize', this.onResize, { passive: true })
-  },
   async mounted() {
     await this.fetchRawdata()
     await this.setReady()
     await this.updateMatrixLayout()
-    window.addEventListener('resize', this.onResize, { passive: true })
-    this.onResize()
-    this.renderDataTable()
+    // window.addEventListener('resize', this.onResize, { passive: true })
+    // this.onResize()
+    // this.renderDataTable()
     this.initilized = true
   }
 }
