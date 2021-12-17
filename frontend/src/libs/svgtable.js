@@ -54,6 +54,11 @@ export default class SVGTable {
         this._endIndex = 49;
         this._rowsPerPageSelections = [25, 50, 75];
 
+        // datatable height (for scroll bar height calculation)
+        this._dataHeight = 0;
+        // displayed datatable height (for scroll bar height calculation)
+        this._dataDisplayHeight = 0;
+
         this._scrollbar = {
             horizontal: null,
             vertical: null,
@@ -335,6 +340,8 @@ export default class SVGTable {
         const w = this._sumWidth();
         const h = this._data.length * this._cellHeightA;
 
+        this._dataHeight = h
+
         if (w + this._sliderWidth < this._width) {
             this._width = w;
             this._scrollbar.visible[0] = false;
@@ -345,10 +352,12 @@ export default class SVGTable {
 
         if (h + this._sliderWidth + this._cellHeightA < this._height) {
             this._height = h + this._cellHeightA; // includes header
-            this._scrollbar.visible[1] = false;
+            this._dataDisplayHeight = h;
+            // this._scrollbar.visible[1] = false;
         }
         else {
             this._height -= this._sliderWidth;
+            this._dataDisplayHeight = this._height - this._cellHeightA;
         }
     }
 
@@ -928,10 +937,14 @@ export default class SVGTable {
 
     _addVScroll() {
         const sb = this._scrollbar.vertical = new Scrollbar(this._svg);
+        const scale = this._dataDisplayHeight / this._dataHeight
+        const slideLength = scale * this._dataDisplayHeight
         sb.position(this._left + this._width, this._top + this._fixedHeight, this._height - this._fixedHeight)
             .sliderWidth(this._sliderWidth)
-            .sliderLength(this._sliderLength)
-            .onscroll((y, sy, delta) => this._body.attr("transform", `translate(0,${-sy * this._yf + this._fixedHeight})`))
+            .sliderLength(slideLength)
+            .onscroll((y, sy, delta) => {
+                this._body.attr("transform", `translate(0, ${-sy / scale + this._fixedHeight})`)
+            })
             .attach();
     }
 
@@ -1002,8 +1015,10 @@ export default class SVGTable {
         if (y < this._minY) y = this._minY;
         else if (y > this._fixedHeight) y = this._fixedHeight;
 
-        this._body.attr("transform", `translate(0,${y})`);
-        if (this._scrollbar.vertical)
-            this._scrollbar.vertical.moveSlider(-(y - this._fixedHeight) / this._yf);
+        this._body.attr("transform", `translate(0, ${y})`);
+        if (this._scrollbar.vertical) {
+            const scale = this._dataDisplayHeight / this._dataHeight
+            this._scrollbar.vertical.moveSlider(-(y - this._fixedHeight) * scale);
+        }
     }
 }

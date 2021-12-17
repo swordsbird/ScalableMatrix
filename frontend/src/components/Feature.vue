@@ -1,5 +1,5 @@
 <template>
-  <div class="feature-container" :style="`position: absolute; ${positioning}; overflow: scroll`" v-resize="onResize">
+  <div class="feature-container" :style="`position: absolute; ${positioning}; overflow-y: scroll`" v-resize="onResize">
     <svg ref="feature_parent" style="width: 100%"></svg>
   </div>
 </template>
@@ -43,6 +43,7 @@ export default {
       let data_feature_height = (data_features.length + 1) * featureview.column_height
       
       const svg = d3.select(this.$refs.feature_parent)
+      svg.selectAll("*").remove()
       const height = model_feature_height + data_feature_height
       svg.attr("height", height)
         .attr("width", width)

@@ -183,11 +183,9 @@ export default class Scrollbar {
                 if (this._grabbing) {
                     if (this._vertical) {
                         const y = d3.pointer(e)[1];
-                        const sy = y - this._delta;
-                        if (sy >= 0 && sy <= box.length - this._sliderLength) {
-                            this._slider.attr("y", sy);
-                            if (this._onscroll) this._onscroll(y, sy, this._deltac);
-                        }
+                        const sy = Math.min(Math.max(0, y - this._delta), box.length - this._sliderLength);
+                        this._slider.attr("y", sy);
+                        if (this._onscroll) this._onscroll(y, sy, this._deltac);
                     }
                     else {
                         const x = d3.pointer(e)[0];

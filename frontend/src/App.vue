@@ -18,7 +18,7 @@
           >
             <v-card class="mx-auto" id="feature_view" height="100%">
               <div style="height: 100%">
-                <Feature v-if="initilized"/>
+                <feature v-if="initilized"/>
               </div>
             </v-card>
           </v-col>
@@ -29,10 +29,20 @@
           >
             <v-card class="mx-auto" height="100%">
               <div style="height: calc(100% - 64px); position: relative;">
-                <Matrix v-if="initilized"/>
+                <matrix v-if="initilized"/>
               </div>
-              <div v-if="initilized">{{model_info}}</div>
-              <div v-if="initilized">{{rule_info}}</div>
+              <div class="d-flex justify-space-between px-4 pb-2" v-if="initilized">
+                <div>
+                  <v-btn color="primary" @click="showTable=true">show data</v-btn>
+                </div>
+                <div>
+                  <div class="d-flex justify-end">{{model_info}}</div>
+                  <div class="d-flex justify-end">{{rule_info}}</div>
+                </div>
+              </div>
+              <v-overlay absolute :value="showTable">
+                <data-table />
+              </v-overlay>
             </v-card>
           </v-col>
           <v-col
@@ -42,7 +52,7 @@
           >
             <v-card class="mx-auto" height="100%">
               <div style="height: 100%; position: relative;">
-                <Info :render="initilized"/>
+                <info :render="initilized"/>
               </div>
             </v-card>
           </v-col>
@@ -77,6 +87,7 @@ import Info from './components/Info.vue'
 import { mapActions, mapGetters, mapState } from "vuex"
 import SVGTable from './libs/svgtable'
 import * as d3 from 'd3'
+import DataTable from './components/DataTable.vue'
 
 
 export default {
@@ -84,7 +95,8 @@ export default {
   components: {
     Matrix,
     Feature,
-    Info
+    Info,
+    DataTable
   },
   computed: {
     ...mapGetters(['model_info', 'rule_info']),
@@ -138,6 +150,8 @@ export default {
       drawer: null,
       tab: 'Data Table',
       initilized: false,
+
+      showTable: false
     }
   },
   async mounted() {
@@ -185,6 +199,11 @@ histogram debug
   padding: .4rem .6rem;
   position: absolute;
   z-index: 300;
+}
+
+.v-overlay__content {
+  width: 100%;
+  height: 100%;
 }
 
 @media (min-width: 2560px) {
