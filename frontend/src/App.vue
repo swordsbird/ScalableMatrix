@@ -86,8 +86,8 @@ import Matrix from './components/Matrix.vue'
 import Feature from './components/Feature.vue'
 import Info from './components/Info.vue'
 import { mapActions, mapGetters, mapState } from "vuex"
-import SVGTable from './libs/svgtable'
-import * as d3 from 'd3'
+// import SVGTable from './libs/svgtable'
+// import * as d3 from 'd3'
 import DataTable from './components/DataTable.vue'
 
 
