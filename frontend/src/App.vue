@@ -41,7 +41,14 @@
                 </div>
               </div>
               <v-overlay absolute :value="showTable">
-                <data-table />
+                <div style="height: 100%; position: relative" class="white">
+                  <div style="height: calc(100% - 64px); position: relative">
+                    <data-table />
+                  </div>
+                  <div style="height: 64px">
+                    <v-btn color="primary" @click="showTable=false">hide data</v-btn>
+                  </div>
+                </div>
               </v-overlay>
             </v-card>
           </v-col>

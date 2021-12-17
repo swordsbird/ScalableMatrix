@@ -1,10 +1,9 @@
 <template>
   <div
-    ref="container"
+    ref="container" class="white"
     :style="`position: absolute; ${positioning}; user-select: none`"
     v-resize="onResize"
-  >
-    <svg ref="tableview" style="width: 100%; height: 100%"></svg>
+  ><svg ref="tableview" style="width: 100%; height: 100%"></svg> 
   </div>
 </template>
 
