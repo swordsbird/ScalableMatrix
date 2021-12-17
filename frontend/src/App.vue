@@ -9,37 +9,29 @@
     </v-system-bar>
 
     <v-main>
-      <v-container fluid style="height: 100%">
-        <v-row style="height: 100%">
-          <v-col
-            cols="2"
-            md="2"
-            class="pa-1"
-          >
+      <v-container fluid style="height: 100%; position: relative" class="pa-1">
+        <v-row :style="`height: ${showTable ? 80 : 100}%`" dense>
+          <v-col cols="2" class="pa-1">
             <v-card class="mx-auto" id="feature_view" height="100%">
               <div style="height: 100%">
                 <feature v-if="initilized"/>
               </div>
             </v-card>
           </v-col>
-          <v-col
-            cols="8"
-            md="8"
-            class="pa-1"
-          >
-            <v-card class="mx-auto" height="100%">
+          <v-col cols="8" class="pa-1">
+            <v-card class="mx-auto" height="100%" style="user-select: none">
               <div
-                :style="`height: ${showTable ? 40 : 80}%; position: relative;`"
+                :style="`height: 100%; position: relative;`"
                 class="white"
               >
                 <div style="height: calc(100% - 64px); position: relative;">
-                  <matrix v-if="initilized"/>
+                  <matrix ref="matrix" v-if="initilized"/>
                 </div>
-                <div class="d-flex justify-space-between px-4 pb-2" v-if="initilized">
+                <div class="d-flex justify-space-between align-end pr-4" v-if="initilized">
                   <div>
-                    <v-btn color="primary" @click="toggleDatatable">
-                      <span v-if="showTable">collapse data</span>
-                      <span v-else>expand data</span>
+                    <v-btn color="primary" text @click="toggleDatatable">
+                      <span v-if="showTable">hide data</span>
+                      <span v-else>show data</span>
                     </v-btn>
                   </div>
                   <div>
@@ -48,28 +40,9 @@
                   </div>
                 </div>
               </div>
-              <div
-                :style="`height: ${showTable ? 60 : 20}%; position: relative;`"
-                class="white"
-              >
-                <div style="height: 100%; position: relative" class="white" v-if="initilized">
-                  <div style="height: calc(100%); position: relative" class="d-flex justify-center align-center">
-                    <div style="height: calc(100%); width: calc(100%); position: relative">
-                      <data-table />
-                    </div>
-                  </div>
-                  <!-- <div class="d-flex justify-space-between px-4 pb-2">
-                    <v-btn color="primary" @click="showTable=false">hide data</v-btn>
-                  </div> -->
-                </div>
-              </div>
             </v-card>
           </v-col>
-          <v-col
-            cols="2"
-            md="2"
-            class="pa-1"
-          >
+          <v-col cols="2" class="pa-1">
             <v-card class="mx-auto" height="100%">
               <div style="height: 100%; position: relative;">
                 <info :render="initilized"/>
@@ -77,16 +50,24 @@
             </v-card>
           </v-col>
         </v-row>
-        <!-- <v-row>
-          <v-col class="pt-1"
-            cols="12"
-            md="12"
-          >
-            <v-card flat>
-              <svg ref="tableview"></svg>
+        <v-row :style="`height: 20%`" dense v-show="showTable">
+          <v-col class="px-1">
+            <v-card style="height: 100%" class="mx-auto pt-1">
+              <div
+                :style="`height: 100%; position: relative;`"
+                class="white"
+              >
+                <div style="height: 100%; position: relative" class="white" v-if="initilized">
+                  <div style="height: calc(100%); position: relative" class="d-flex justify-center align-end">
+                    <div style="height: calc(100%); width: calc(100%); position: relative">
+                      <data-table ref="datatable" :display="showTable"/>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </v-card>
           </v-col>
-        </v-row> -->
+        </v-row>
       </v-container>
       <!-- <div class="svg-tooltip"
       :style="{
@@ -131,7 +112,14 @@ export default {
     }
   },
   methods: {
-    ...mapActions(['highlightSample', /*'fetchRawdata', */'updateMatrixLayout', 'updatePageSize', 'setReady']),
+    ...mapActions(['fetchRawdata', 'updateMatrixLayout', 'updatePageSize', 'setReady']),
+    toggleDatatable () {
+      this.showTable = !this.showTable
+      this.$nextTick(() => {
+        this.$refs.matrix?.onResize()
+        this.$refs.datatable?.onResize()
+      })
+    },
     renderDataTable() {
       // const width = this.$refs.tableview.parentNode.getBoundingClientRect().width
       // const height = 250
@@ -182,11 +170,6 @@ export default {
     // this.onResize()
     // this.renderDataTable()
     this.initilized = true
-  },
-  methods: {
-    toggleDatatable () {
-      this.showTable = !this.showTable
-    }
   }
 }
 /*
