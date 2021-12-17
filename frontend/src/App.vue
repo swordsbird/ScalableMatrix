@@ -28,28 +28,41 @@
             class="pa-1"
           >
             <v-card class="mx-auto" height="100%">
-              <div style="height: calc(100% - 64px); position: relative;">
-                <matrix v-if="initilized"/>
-              </div>
-              <div class="d-flex justify-space-between px-4 pb-2" v-if="initilized">
-                <div>
-                  <v-btn color="primary" @click="showTable=true">show data</v-btn>
+              <div
+                :style="`height: ${showTable ? 40 : 80}%; position: relative;`"
+                class="white"
+              >
+                <div style="height: calc(100% - 64px); position: relative;">
+                  <matrix v-if="initilized"/>
                 </div>
-                <div>
-                  <div class="d-flex justify-end">{{model_info}}</div>
-                  <div class="d-flex justify-end">{{rule_info}}</div>
-                </div>
-              </div>
-              <v-overlay absolute :value="showTable">
-                <div style="height: 100%; position: relative" class="white">
-                  <div style="height: calc(100% - 64px); position: relative">
-                    <data-table />
+                <div class="d-flex justify-space-between px-4 pb-2" v-if="initilized">
+                  <div>
+                    <v-btn color="primary" @click="toggleDatatable">
+                      <span v-if="showTable">collapse data</span>
+                      <span v-else>expand data</span>
+                    </v-btn>
                   </div>
-                  <div style="height: 64px">
+                  <div>
+                    <div class="d-flex justify-end">{{model_info}}</div>
+                    <div class="d-flex justify-end">{{rule_info}}</div>
+                  </div>
+                </div>
+              </div>
+              <div
+                :style="`height: ${showTable ? 60 : 20}%; position: relative;`"
+                class="white"
+              >
+                <div style="height: 100%; position: relative" class="white" v-if="initilized">
+                  <div style="height: calc(100%); position: relative" class="d-flex justify-center align-center">
+                    <div style="height: calc(100%); width: calc(100%); position: relative">
+                      <data-table />
+                    </div>
+                  </div>
+                  <!-- <div class="d-flex justify-space-between px-4 pb-2">
                     <v-btn color="primary" @click="showTable=false">hide data</v-btn>
-                  </div>
+                  </div> -->
                 </div>
-              </v-overlay>
+              </div>
             </v-card>
           </v-col>
           <v-col
@@ -118,38 +131,38 @@ export default {
     }
   },
   methods: {
-    ...mapActions(['highlightSample', 'fetchRawdata', 'updateMatrixLayout', 'updatePageSize', 'setReady']),
+    ...mapActions(['highlightSample', /*'fetchRawdata', */'updateMatrixLayout', 'updatePageSize', 'setReady']),
     renderDataTable() {
-      const width = this.$refs.tableview.parentNode.getBoundingClientRect().width
-      const height = 250
+      // const width = this.$refs.tableview.parentNode.getBoundingClientRect().width
+      // const height = 250
 
-      const svg = d3.select(this.$refs.tableview)
-          .attr("width", width)
-          .attr("height", height);
+      // const svg = d3.select(this.$refs.tableview)
+      //     .attr("width", width)
+      //     .attr("height", height);
 
-      svg.selectAll('*').remove()
+      // svg.selectAll('*').remove()
 
-      const reordered_data = 
-        this.highlighted_sample ? (
-          this.filtered_data.filter(d => this.highlighted_sample == d._id).concat(
-            this.filtered_data.filter(d => this.highlighted_sample != d._id)
-          )
-        ) : this.filtered_data
+      // const reordered_data = 
+      //   this.highlighted_sample ? (
+      //     this.filtered_data.filter(d => this.highlighted_sample == d._id).concat(
+      //       this.filtered_data.filter(d => this.highlighted_sample != d._id)
+      //     )
+      //   ) : this.filtered_data
 
-      new SVGTable(svg)
-          .size([width, height])
-          .fixedRows(this.highlighted_sample ? 1 : 0)
-          .fixedColumns(1)
-          .rowsPerPage(25)    
-          .defaultNumberFormat(",.0d")
-          .style({ border: false })
-          .data(reordered_data)  
-          .onclick((ctx, cell) => {
-            const sample_id = this.filtered_data[cell.rowIndex]._id
-            this.highlightSample(sample_id)
-          })
-          //.onhighlight((ctx, d) => { console.log(ctx, ) })
-          .render();
+      // new SVGTable(svg)
+      //     .size([width, height])
+      //     .fixedRows(this.highlighted_sample ? 1 : 0)
+      //     .fixedColumns(1)
+      //     .rowsPerPage(25)    
+      //     .defaultNumberFormat(",.0d")
+      //     .style({ border: false })
+      //     .data(reordered_data)  
+      //     .onclick((ctx, cell) => {
+      //       const sample_id = this.filtered_data[cell.rowIndex]._id
+      //       this.highlightSample(sample_id)
+      //     })
+      //     //.onhighlight((ctx, d) => { console.log(ctx, ) })
+      //     .render();
     }
   },
   data: () => {
@@ -169,6 +182,11 @@ export default {
     // this.onResize()
     // this.renderDataTable()
     this.initilized = true
+  },
+  methods: {
+    toggleDatatable () {
+      this.showTable = !this.showTable
+    }
   }
 }
 /*
@@ -206,11 +224,6 @@ histogram debug
   padding: .4rem .6rem;
   position: absolute;
   z-index: 300;
-}
-
-.v-overlay__content {
-  width: 100%;
-  height: 100%;
 }
 
 @media (min-width: 2560px) {

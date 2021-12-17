@@ -1,5 +1,5 @@
 <template>
-  <div ref="matrix_parent" :style="`position: absolute; ${positioning}`" v-resize="onResize">
+  <div ref="matrix_parent" :style="`position: absolute; ${positioning}`">
     <!--div class="text-center" v-if="matrixview.order_keys.length > 0">
       Order by:
       <v-btn
@@ -72,14 +72,12 @@ export default {
       this.render()
     }
   },
-  // beforeDestroy () {
-  //   if (typeof window === 'undefined') return
-  //   window.removeEventListener('resize', this.onResize, { passive: true })
-  // },
-  // async mounted() {
-  //   window.addEventListener('resize', this.onResize, { passive: true })
-  //   this.onResize()
-  // },
+  beforeDestroy () {
+    this.$refs.matrix_parent.removeEventListener('resize', this.onResize, { passive: true })
+  },
+  mounted() {
+    this.$refs.matrix_parent.addEventListener('resize', this.onResize, { passive: true })
+  },
   methods: {
     ...mapActions([ 'tooltip', 'orderColumn', 'orderRow', 'showRepresentRules', 'showExploreRules', 'updateMatrixSize' ]),
     onResize(){
