@@ -45,23 +45,30 @@ export default {
           .concat(this.filtered_data.filter(d => this.highlighted_sample !== d._id))
       ) : this.filtered_data
 
-      console.log(reordered_data[0])
-      console.log(this.filtered_data)
-      console.log(this.data_shaps)
-      console.log(this.data_table)
+      // console.log(reordered_data[0])
+      // console.log(this.filtered_data)
+      // console.log(this.data_shaps)
+      // console.log(this.data_table)
 
       const self = this
       new SVGTable(svg)
         .size([width, height])
-        .fixedRows(this.highlighted_sample ? 1 : 0)
+        .fixedRows(this.highlighted_sample !== undefined ? 1 : 0)
         .fixedColumns(1)
         .rowsPerPage(25)
         .defaultNumberFormat(',.0d')
         .style({ border: false })
+        .cellRender((rect, fill, isHeader, isFixed) => {
+          if (isHeader) return false
+          console.log(rect)
+        })
+        .highlightRender(r => {
+          r.attr('fill', d => d ? '#300' : '#FFF')
+        })
         .data(reordered_data)
         .onclick(function (ctx, cell) {
-          console.log(this._data[cell.rowIndex])
-          const sample_id = this._data[cell.rowIndex]._id
+          console.log(cell)
+          let sample_id = this._data[cell.rowIndex]._id
           self.highlightSample(sample_id)
         })
         .render()

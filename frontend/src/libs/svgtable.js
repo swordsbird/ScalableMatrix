@@ -72,6 +72,7 @@ export default class SVGTable {
             background: "white",
             headerBackground: "#ddd",
             fixedBackground: "#eee",
+            fixedBorder: false,
             highlight: "cross", // none, cell, cross
             highlightBackground: "#fff3b0"
         };
@@ -88,6 +89,9 @@ export default class SVGTable {
         this._onhighlight = null;
         this._onclick = null;
         this._oncontextmenu = null;
+
+        this._highlightRender = null;
+        this._cellRender = null;
 
         this._uniqueId = new String(Date.now() * Math.random()).replace(".", "");
     }
@@ -202,6 +206,14 @@ export default class SVGTable {
 
     oncontextmenu(_) {
         return arguments.length ? (this._oncontextmenu = _, this) : this._oncontextmenu;
+    }
+
+    cellRender(_) {
+        return arguments.length ? (this._cellRender = _, this) : this._cellRender;
+    }
+
+    highlightRender(_) {
+        return arguments.length ? (this._highlightRender = _, this) : this._highlightRender;
     }
 
     render() {
@@ -607,7 +619,7 @@ export default class SVGTable {
                 d => d,
                 (d, i) => `translate(0,${i * this._cellHeightA})`,
                 d => `translate(${d.column.tx},0)`,
-                g => this._addCell(g, style.fixedBackground, 0, false, true));
+                g => this._addCell(g, style.fixedBackground, 0, false, true))
         }
 
         this._body = body;
@@ -651,9 +663,14 @@ export default class SVGTable {
             if (!highlight || that._focus) return;
 
             const r = cell.select("rect")
-                .datum(cell => test(d, cell) ? style.highlightBackground : that._cellColor(cell, style.background, false, false))
+            if (that._highlightRender) {
+                r.datum(cell => test(d, cell))
+                that._highlightRender(r)
+            } else  {
+                r.datum(cell => test(d, cell) ? style.highlightBackground : that._cellColor(cell, style.background, false, false))
                 .attr("fill", d => d);
-            if (!that._style.border) r.attr("stroke", d => d);
+                if (!that._style.border) r.attr("stroke", d => d);
+            }  
 
             if (fixedCell) fixedCell.select("text").attr("font-weight", cell => cell.rowIndex === d.rowIndex ? "bold" : "");
             that._dataHeader.selectAll("text").attr("font-weight", cell => cell.column.index === d.column.index ? "bold" : "");
@@ -759,7 +776,9 @@ export default class SVGTable {
             (d, i) => `translate(0,${(i + 1) * this._cellHeightA})`,
             d => `translate(${d.column.tx},0)`,
             g => this._addCell(g, style.fixedBackground, this._fixedColumns, false, true)
-        );
+        ).on("click", (e, d) => {
+            if (this._onclick) this._onclick(e, d);
+        });
 
         // a fixed line for seperating header and body
         g.append("line")
@@ -873,9 +892,16 @@ export default class SVGTable {
         const rect = g.append("rect")
             .attr("width", d => d.column.width)
             .attr("height", this._cellHeightA)
-            .attr("fill", d => this._cellColor(d, fill, isHeader, isFixed))
+        
+        let rendered = false
+        if (this._cellRender) {
+            rendered = this._cellRender(rect, fill, isHeader, isFixed)
+        }
+        if (!rendered) {
+            rect.attr("fill", d => this._cellColor(d, fill, isHeader, isFixed))
             .attr("stroke-width", 0.1)
             .attr("stroke", style.border ? style.borderColor : fill);
+        }
 
         if (this._heatmap && !(isHeader || isFixed)) rect.attr("opacity", 0.5);
 

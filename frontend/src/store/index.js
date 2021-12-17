@@ -17,7 +17,7 @@ export default new Vuex.Store({
     rulefilter: () => 1,
     crossfilter: () => 1,
     coverfilter: () => 1,
-    highlighted_sample: null,
+    highlighted_sample: undefined,
     instances: [],
     data_features: [],
     data_table: [],
@@ -166,7 +166,7 @@ export default new Vuex.Store({
       if (state.highlighted_sample != sample_id) {
         state.highlighted_sample = sample_id
       } else {
-        state.highlighted_sample = null
+        state.highlighted_sample = undefined
       }
     },
     updateMatrixLayout(state) {
@@ -683,7 +683,7 @@ export default new Vuex.Store({
       commit('changeCrossfilter', filter)
       commit('updateMatrixLayout')
     },
-    async highlightSample({ commit }, sample_id) {
+    highlightSample({ commit }, sample_id) {
       commit('highlight_sample', sample_id)
     },
     async tooltip({ commit }, { type, data }) {

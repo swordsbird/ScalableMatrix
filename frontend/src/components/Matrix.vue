@@ -814,7 +814,7 @@ export default {
           .transition().duration(matrixview.duration)
           .attr('transform', d => `translate(${d.x},${d.y})`)
           .transition().duration(matrixview.duration)
-          .style('opacity', d => self.highlighted_sample == null ? 1 : d.samples.has(self.highlighted_sample) ? 1 : 0.3)
+          .style('opacity', d => self.highlighted_sample === undefined ? 1 : d.samples.has(self.highlighted_sample) ? 1 : 0.3)
 //          .style('opacity', 1)//d => d.rule.represent ? 1 : 0.5)
 
       }
