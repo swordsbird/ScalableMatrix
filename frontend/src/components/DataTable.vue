@@ -3,7 +3,15 @@
     ref="container" class="white"
     :style="`position: absolute; ${positioning}; user-select: none`"
     v-resize="onResize"
-  ><svg ref="tableview" style="width: 100%; height: 100%"></svg> 
+  >
+    <v-btn
+      style="position: absolute; top: 0px; right: 160px"
+      :color="showShaps ? 'primary': 'grey'" text small
+      @click="toggleShowShaps"
+      >
+      shap
+    </v-btn>
+    <svg ref="tableview" style="width: 100%; height: 100%"></svg> 
   </div>
 </template>
 
@@ -20,9 +28,13 @@ export default {
     },
     display: Boolean
   },
+  data: () => ({
+    showShaps: false,
+    instance: null,
+  }),
   computed: {
     ...mapGetters(['filtered_data']),
-    ...mapState(['highlighted_sample', 'crossfilter', 'data_shaps', 'data_table'])
+    ...mapState(['highlighted_sample', 'crossfilter', 'data_shaps', 'data_table', 'colorSchema'])
   },
   watch: {
     crossfilter () { this.renderTable() },
@@ -45,33 +57,67 @@ export default {
           .concat(this.filtered_data.filter(d => this.highlighted_sample !== d._id))
       ) : this.filtered_data
 
-      // console.log(reordered_data[0])
-      // console.log(this.filtered_data)
-      // console.log(this.data_shaps)
-      // console.log(this.data_table)
+      function getWeightedColor (baseColor, shap) {
+        return d3.interpolateLab('white', baseColor)(Math.sqrt(Math.sqrt(Math.abs(shap))))
+      }
 
       const self = this
-      new SVGTable(svg)
+      this.instance = new SVGTable(svg)
         .size([width, height])
         .fixedRows(this.highlighted_sample !== undefined ? 1 : 0)
         .fixedColumns(1)
         .rowsPerPage(25)
         .defaultNumberFormat(',.0d')
         .style({ border: false })
-        .cellRender((rect, fill, isHeader, isFixed) => {
+        .cellRender(function (rect, fill, isHeader, isFixedRow, isFixedCol) {
           if (isHeader) return false
-          console.log(rect)
+          if (isFixedCol) return false
+          if (!self.showShaps) return false
+          rect.attr('fill', d => {
+            const shapVal = self.data_shaps[this._data[d.rowIndex]._id][d.colIndex - 2]
+            if (shapVal !== undefined) {
+              const baseColor = self.colorSchema[shapVal[0] > 0 ? 0: 1]
+              const color = getWeightedColor(baseColor, shapVal[0])
+              if (isFixedRow) {
+                // TODO: set style for the fixed row
+              }
+              return color
+            }
+            return 'white'
+          })
+          return true
         })
-        .highlightRender(r => {
-          r.attr('fill', d => d ? '#300' : '#FFF')
+        .highlightRender(function (r) {
+          r.attr('fill', item => {
+            const { d, hl } = item
+            if (self.showShaps) {
+              const shapVal = self.data_shaps[this._data[d.rowIndex]._id][d.colIndex - 2]
+              let color = 'white'
+              if (shapVal !== undefined) {
+                const baseColor = self.colorSchema[shapVal[0] > 0 ? 0: 1]
+                color = getWeightedColor(baseColor, shapVal[0])
+              }
+              if (hl) {
+                color = d3.interpolateLab('grey', color)(0.8)
+              }
+              return color
+            } else {
+              return hl ? d3.interpolateLab('grey', 'white')(0.8) : 'white'
+            }
+          })
         })
         .data(reordered_data)
         .onclick(function (ctx, cell) {
-          console.log(cell)
           let sample_id = this._data[cell.rowIndex]._id
           self.highlightSample(sample_id)
         })
         .render()
+    },
+    toggleShowShaps () {
+      this.showShaps = !this.showShaps
+      if (this.instance) {
+        this.instance.refresh()
+      }
     },
     onResize () {
       this.renderTable()

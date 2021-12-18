@@ -216,6 +216,22 @@ export default class SVGTable {
         return arguments.length ? (this._highlightRender = _, this) : this._highlightRender;
     }
 
+    refresh() {
+        const style = this._style
+        const rect = this._svg.selectAll(".row").selectAll("rect");
+        let rendered = false
+        if (this._cellRender) {
+            rendered = this._cellRender(rect, style.background, false, false, false)
+        }
+        if (!rendered) {
+            rect.attr("fill", d => this._cellColor(d, style.background, false, false))
+            .attr("stroke-width", 0.1)
+            .attr("stroke", style.border ? style.borderColor : style.background);
+        }
+        
+
+    }
+
     render() {
         if (!this._validate()) {
             // error
@@ -592,13 +608,14 @@ export default class SVGTable {
             (d, i) => this._columns.slice(this._fixedColumns).map((c, j) => {
                 return {
                     rowIndex: i + this._fixedRows,
+                    colIndex: j + this._fixedColumns,
                     column: c,
                     value: this._dataIsArray ? d[c.index] : d[c.name]
                 }
             }),
             (d, i) => `translate(0,${i * this._cellHeightA})`,
             d => `translate(${d.column.tx},0)`,
-            g => this._addCell(g, style.background, this._fixedColumns))
+            g => this._addCell(g, style.background, this._fixedColumns, false, false, false))
             .on("click", click)
             .on("contextmenu", contextmenu)
             .on("mouseover", mouseover)
@@ -613,13 +630,14 @@ export default class SVGTable {
                 () => rows.map((r, i) => this._columns.slice(0, this._fixedColumns).map((c, j) => ({
                     origin: r, // for sort to get the index of data
                     rowIndex: i + this._fixedRows,
+                    colIndex: j + this._fixedColumns,
                     column: c,
                     value: this._dataIsArray ? r[c.index] : r[c.name]
                 }))),
                 d => d,
                 (d, i) => `translate(0,${i * this._cellHeightA})`,
                 d => `translate(${d.column.tx},0)`,
-                g => this._addCell(g, style.fixedBackground, 0, false, true))
+                g => this._addCell(g, style.fixedBackground, 0, false, false, true))
         }
 
         this._body = body;
@@ -664,7 +682,7 @@ export default class SVGTable {
 
             const r = cell.select("rect")
             if (that._highlightRender) {
-                r.datum(cell => test(d, cell))
+                r.datum(cell => ({ d: cell, hl: test(d, cell) }))
                 that._highlightRender(r)
             } else  {
                 r.datum(cell => test(d, cell) ? style.highlightBackground : that._cellColor(cell, style.background, false, false))
@@ -688,8 +706,16 @@ export default class SVGTable {
         function mouseleave() {
             if (!highlight || that._focus) return;
 
-            const r = cell.select("rect").attr("fill", d => that._cellColor(d, style.background, false, false));
-            if (!that._style.border) r.attr("stroke", d => that._cellColor(d, style.background, false, false));
+            const rect = cell.select("rect")
+
+            let rendered = false
+            if (that._cellRender) {
+                rendered = that._cellRender(rect, style.background, false, false, false)
+            }
+            if (!rendered) {
+                rect.attr("fill", d => that._cellColor(d, style.background, false, false));
+                if (!that._style.border) rect.attr("stroke", d => that._cellColor(d, style.background, false, false));
+            }
 
             if (fixedCell) fixedCell.select("text").attr("font-weight", "");
             that._dataHeader.selectAll("text").attr("font-weight", "");
@@ -725,7 +751,7 @@ export default class SVGTable {
             .join("g")
             .attr("class", "column")
             .attr("transform", d => `translate(${d.column.tx},0)`)
-            .call(g => this._addCell(g, style.headerBackground, 0, true, true))
+            .call(g => this._addCell(g, style.headerBackground, 0, true, true, true))
             .on("click", (e, d) => this._sort(d));
 
         // fixed data cells in the fixed columns section
@@ -735,13 +761,14 @@ export default class SVGTable {
                 "fixedRow",
                 () => rows.map((r, i) => this._columns.slice(0, this._fixedColumns).map((c, j) => ({
                     rowIndex: i,
+                    colIndex: j,
                     column: c,
                     value: this._dataIsArray ? r[c.index] : r[c.name]
                 }))),
                 d => d,
                 (d, i) => `translate(0,${(i + 1) * this._cellHeightA})`,
                 d => `translate(${d.column.tx},0)`,
-                g => this._addCell(g, style.fixedBackground, 0, false, true));
+                g => this._addCell(g, style.fixedBackground, 0, false, false, true));
         }
 
         // the container of the rest of the header cells, its content is clipped by headerClip
@@ -759,7 +786,7 @@ export default class SVGTable {
             .join("g")
             .attr("class", "column")
             .attr("transform", d => `translate(${d.column.tx},0)`)
-            .call(g => this._addCell(g, style.headerBackground, this._fixedColumns, true, true))
+            .call(g => this._addCell(g, style.headerBackground, this._fixedColumns, true, true, false))
             .on("click", (e, d) => this._sort(d));
 
         this._addRows(
@@ -769,13 +796,14 @@ export default class SVGTable {
             (d, i) => this._columns.slice(this._fixedColumns).map((c, j) => {
                 return {
                     rowIndex: i,
+                    colIndex: j + this._fixedColumns,
                     column: c,
                     value: this._dataIsArray ? d[c.index] : d[c.name]
                 }
             }),
             (d, i) => `translate(0,${(i + 1) * this._cellHeightA})`,
             d => `translate(${d.column.tx},0)`,
-            g => this._addCell(g, style.fixedBackground, this._fixedColumns, false, true)
+            g => this._addCell(g, style.fixedBackground, this._fixedColumns, false, true, false)
         ).on("click", (e, d) => {
             if (this._onclick) this._onclick(e, d);
         });
@@ -886,8 +914,10 @@ export default class SVGTable {
     }
 
     // base: number of fixed cells on the same row
-    _addCell(g, fill, base, isHeader, isFixed) {
+    _addCell(g, fill, base, isHeader, isFixedRow, isFixedCol) {
         const style = this._style;
+
+        const isFixed = isFixedCol || isFixedRow;
 
         const rect = g.append("rect")
             .attr("width", d => d.column.width)
@@ -895,7 +925,7 @@ export default class SVGTable {
         
         let rendered = false
         if (this._cellRender) {
-            rendered = this._cellRender(rect, fill, isHeader, isFixed)
+            rendered = this._cellRender(rect, fill, isHeader, isFixedRow, isFixedCol)
         }
         if (!rendered) {
             rect.attr("fill", d => this._cellColor(d, fill, isHeader, isFixed))
