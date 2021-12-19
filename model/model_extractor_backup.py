@@ -101,6 +101,7 @@ class Extractor:
 
     def getWeight(self, Mat):
         # 权重向量w
+        return np.ones(self.y_raw)
         RXMat = np.abs(Mat)
         XRMat = RXMat.transpose()
         XXAnd = np.dot(XRMat, RXMat)

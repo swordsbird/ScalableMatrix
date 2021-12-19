@@ -9,6 +9,7 @@ function BrushableBarchart() {
   let colors = { handle: d3.schemeDark2[1], bar: d3.schemeDark2[0] };
   let datatype = "category"
   let data = null
+  let brushable = true
   const maxbins = 40
   const categorical_thres = 5
   const min_display_height = 3
@@ -94,6 +95,7 @@ function BrushableBarchart() {
       .attr("stroke", colors.handle)
       .attr("stroke-width", ".5px")
 
+    if (!brushable) return
     if (datatype == 'time' || datatype == 'number') {
       const triangle = d3.symbol().size(48).type(d3.symbolTriangle);
   
@@ -306,6 +308,12 @@ function BrushableBarchart() {
   chart.data = function (_) {
     if (!arguments.length) return data;
     data = _;
+    return chart;
+  };
+
+  chart.brushable = function (_) {
+    if (!arguments.length) return brushable;
+    brushable = _;
     return chart;
   };
 

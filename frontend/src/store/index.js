@@ -26,13 +26,14 @@ export default new Vuex.Store({
     colorSchema: [d3.schemeTableau10[1], d3.schemeTableau10[0]].concat(d3.schemeTableau10.slice(2)),
     page_width: 1800,
     matrixview: {
+      maxlen: 22,
       sort_by_cover_num: false,
       n_lines: 80,
       padding: 10,
       cell_padding: 3,
       margin: {
         top: 130,
-        right: 150,
+        right: 180,
         bottom: 100,
         left: 90,
       },
@@ -43,14 +44,22 @@ export default new Vuex.Store({
       glyph_width: 60,
       glyph_padding: 35,
       duration: 800,
-      cell_stroke_width: .2,
+      cell: {
+        header_opacity: .3,
+        highlight_header_opacity: .8,
+        stroke_width: .5,
+        highlight_stroke_width: 1,
+        stroke_color: 'gray',
+        highlight_stroke_color: 'black'
+      },
       feature_size_max: 2,
-      primary_feature_size: 2.5,
+      focused_feature: {
+        extend_width: 160,
+      },
       rule_size_max: 1,
-      n_feature_show_axis: 3,
       hist_height: 4,
       order_keys: [],
-      is_zoomed: false,
+      zoom_level: 0,
       extended_cols: [
         {
           position: 1,
@@ -70,7 +79,7 @@ export default new Vuex.Store({
       ],
       row_height: {
         small: 2,
-        medium: 8,
+        medium: 6,
         large: 32,
       },
       row_padding: 2,
@@ -198,26 +207,27 @@ export default new Vuex.Store({
       let rules = state.rules
         .filter(d => d.selected)
         .filter(d => state.rulefilter(d))
-        /*
         .filter(d => {
           let count = 0
           for (let id of d.samples) {
             if (filtered_ids.has(id)) count++
           }
-          return count / d.samples.length >= 0.4
+          return count / d.samples.length >= 0.8
         })
-        */
-      const n_lines = state.matrixview.is_zoomed ? (state.matrixview.n_lines - 15) : state.matrixview.n_lines
+        
+      const n_lines = state.matrixview.zoom_level > 0 ? (state.matrixview.n_lines - 15) : state.matrixview.n_lines
 
       let has_primary_key = false
       const preserved_keys = new Set(['coverage', 'fidelity', 'LOF'])
       if (state.matrixview.order_keys.length == 0) {
-        if (!state.matrixview.is_zoomed) {
+        if (state.matrixview.zoom_level == 0) {
           rules = rules.sort((a, b) => b.coverage - a.coverage)
         }
       } else {
-        if (!state.matrixview.is_zoomed) {
+        if (state.matrixview.zoom_level == 0) {
           has_primary_key = 1
+          console.log('sort by keys', state.matrixview.order_keys)
+          console.log(rules)
           rules = rules.sort((a, b) => {
             for (let index = 0; index < state.matrixview.order_keys.length; ++index) {
               const key = state.matrixview.order_keys[index].key
@@ -231,12 +241,12 @@ export default new Vuex.Store({
                   return -1
                 } else if (!a.cond_dict[key] && !b.cond_dict[key]) {
                   continue
-                } else {
+                } else if (a.range_key[key] != b.range_key[key]) {
                   return +order * (a.range_key[key] - b.range_key[key])
                 }
               }
             }
-            return 1
+            return a.predict - b.predict
           })
         } else {
           has_primary_key = 1
@@ -264,12 +274,15 @@ export default new Vuex.Store({
                   }
                 }
               }
-              return 1
+              return a.predict - b.predict
             }))
           }
           rules = ret
         }
       }
+      const orderkey_items = state.matrixview.order_keys.map(d => d.key)
+        .filter(d => !preserved_keys.has(d))
+      const orderkey_set = new Set(orderkey_items)
       /*
       if (rules.length > n_lines) {
         // console.log('rules.length', rules.length)
@@ -280,24 +293,22 @@ export default new Vuex.Store({
       */
       const samples = new Set([].concat(...rules.map(d => d.samples)))
       state.coverfilter = (d) => samples.has(d._id)
-      const rule_height = (height) * rules.length / n_lines
-
-
       state.primary.has_primary_key = has_primary_key
       const importance_range = d3.extent(features, d => d.importance)
       const oldFeatureScale = d3.scaleLinear()
         .domain(importance_range)
         .range(feature_base)
       let feature_sum = features.map(d => oldFeatureScale(d.importance)).reduce((a, b) => a + b)
-      if (has_primary_key) {
-        feature_sum += state.matrixview.primary_feature_size - 1
-      }
       const extended_cols = state.matrixview.extended_cols
-      const main_width = width - (state.matrixview.padding + state.matrixview.coverage_width) * extended_cols.length + 2 * state.matrixview.glyph_padding
+      const focus_extend_width = orderkey_items.length * state.matrixview.focused_feature.extend_width
+      const main_width = width 
+        - (state.matrixview.padding + state.matrixview.coverage_width) * extended_cols.length 
+        + 2 * state.matrixview.glyph_padding
+        - focus_extend_width
       const width_ratio = main_width / feature_sum
       const main_start_x = (state.matrixview.padding + state.matrixview.coverage_width) * extended_cols.filter(d => d.position < 0).length 
         + state.matrixview.glyph_padding + state.matrixview.glyph_width + 5
-      const main_end_x = main_start_x + main_width + state.matrixview.padding
+      const main_end_x = main_start_x + main_width + state.matrixview.padding + focus_extend_width
       const feature_range = [feature_base[0] * width_ratio, feature_base[1] * width_ratio]
       const featureScale = d3.scaleLinear()
         .domain(importance_range)
@@ -307,7 +318,7 @@ export default new Vuex.Store({
       const oldCoverageScale = d3.scaleLinear()
         .domain(coverage_range)
         .range(rule_base)
-      const showHistogram = (d) => state.matrixview.is_zoomed && d.represent
+      const showHistogram = (d) => state.matrixview.zoom_level > 0 && d.represent
       //const rule_sum = rules.map(d => oldCoverageScale(d.coverage) * representScale(d.represent)).reduce((a, b) => a + b)
       //const height_ratio = rule_height / rule_sum
       //const rule_range = [rule_base[0] * height_ratio, rule_base[1] * height_ratio]
@@ -357,18 +368,18 @@ export default new Vuex.Store({
 
       for (let i = 0; i < features.length; ++i) {
         const feature = features[i]
-        if (feature.name != 'others') {
-          feature.count = rows.filter(d => {
-            for (let cond of d.rule.conds) {
-              if (cond.key == feature.index) {
-                return 1
-              }
+        //if (feature.name != 'others') {
+        feature.count = rows.filter(d => {
+          for (let cond of d.rule.conds) {
+            if (cond.key == feature.index) {
+              return 1
             }
-            return 0
-          }).length
-        } else {
+          }
+          return 0
+        }).length
+        /* } else {
           feature.count = -1
-        }
+        } */
       }
       if (state.matrixview.sort_by_cover_num) {
         features = features.sort((a, b) => b.count - a.count)
@@ -378,39 +389,30 @@ export default new Vuex.Store({
 
       const cols = []
       const indexed_cols = []
-      const feature_padding = 1
+      const feature_padding = .5
       for (let x = main_start_x, i = 0; i < features.length; ++i) {
         const feature = features[i]
-        let show_axis = 0
-        if (has_primary_key) {
-          if (feature.index == state.primary.key) {
-            show_axis = 1
-          } else if (i < state.matrixview.n_feature_show_axis - 1) {
-            show_axis = 1
-          }
-        } else if (i < state.matrixview.n_feature_show_axis) {
-          show_axis = 1
+        let show_axis = orderkey_set.has(feature.index)
+        if (show_axis) console.log(feature)
+        const width = featureScale(feature.importance)
+          + (show_axis ? (state.matrixview.focused_feature.extend_width) : 0)
+        //if (feature.name != 'others') {
+        const scale = d3.scaleLinear().domain(feature.range).range([feature_padding, width - feature_padding])
+        const item = {
+          x: x, y: 0, width, height: height,
+          index: feature.index,
+          items: [],
+          name: feature.name,
+          type: feature.dtype,
+          count: feature.count,
+          range: feature.range,
+          values: feature.values,
+          scale,
+          show_axis
         }
-        const width = featureScale(feature.importance) +
-          (has_primary_key && feature.index == state.primary.key ? width_ratio * (state.matrixview.primary_feature_size - 1) : 0)
-          - feature_padding
-        if (feature.name != 'others') {
-          const scale = d3.scaleLinear().domain(feature.range).range([0, width])
-          const item = {
-            x: x, y: 0, width, height: height,
-            index: feature.index,
-            items: [],
-            name: feature.name,
-            type: feature.dtype,
-            count: feature.count,
-            range: feature.range,
-            values: feature.values,
-            scale,
-            show_axis
-          }
-          cols.push(item)
-          indexed_cols[item.index] = item
-        } else {
+        cols.push(item)
+        indexed_cols[item.index] = item
+        /*} else {
           const scale = d3.scaleLinear().domain([0, 1]).range([width, width])
           const item = {
             x: x, y: 0, width, height: height,
@@ -422,14 +424,15 @@ export default new Vuex.Store({
             type: 'others',
             scale,
             show_axis: false
-          }
+          } 
           cols.push(item)
           for (let index of feature.indexes) {
             indexed_cols[index] = item
           }
-        }
-        x += width + feature_padding
+        }*/
+        x += width
       }
+      console.log(cols)
 
       for (let i = 0; i < extended_cols.length; ++i) {
         const width = state.matrixview.coverage_width
@@ -454,7 +457,7 @@ export default new Vuex.Store({
           if (feature.type == 'categoric') {
             const s = d.range.reduce((a, b) => a + b)
             const neg = s > d.range.length / 2
-            const cond1 = row.rule.represent && state.matrixview.is_zoomed
+            const cond1 = row.rule.represent && state.matrixview.zoom_level > 0
             for (let j = 0; j < d.range.length; ++j) {
               const cond2 = (d.range[j] > 0) != neg
               if (cond1 && (d.range[j] > 0)|| cond2 && !cond1)
@@ -575,21 +578,28 @@ export default new Vuex.Store({
           key: cond_key,
           range: rule.range[cond_key],
         }))
-      })).filter(d => d.fidelity > 0.6)
+      }))//.filter(d => d.fidelity > 0.6)
       for (let rule of raw_rules) {
         rule.range_key = {}
         for (let key of Object.keys(rule.range)) {
           const range = rule.range[key]
-          rule.range_key[key] = range.length == 2 ? 
-            (range[0] * 1e8 + range[1]) : 
-            range.map(d => d ? '1' : '0').join('')
+          if (range.length == 2) {
+            rule.range_key[key] = (range[0] * 1e8 + range[1])
+          } else {
+            const neg = range.reduce((a, b) => a + b) > range.length / 2
+            if (neg) {
+              rule.range_key[key] = range.map(d => d ? '0' : '2').join('')
+            } else {
+              rule.range_key[key] = range.map(d => d ? '1' : '0').join('')
+            }
+          }
         }
       }
       raw_rules.forEach(d => d.selected = 1)
       state.rules = raw_rules
     },
     setZoomStatus(state, status) {
-      state.matrixview.is_zoomed = status
+      state.matrixview.zoom_level = status
     },
     setFeatures(state, features) {
       console.log(features[0])
@@ -614,8 +624,8 @@ export default new Vuex.Store({
   },
   getters: {
     //model_info: 'Dataset: German credit, Model: Random Forest, Original Accuracy: 82.83%, Fedility: 95.20%',
-    model_info: (state) => `Dataset: ${state.model_info.dataset}, Model: ${state.model_info.model}, Original Accuracy: ${Number(state.model_info.accuracy * 100).toFixed(2)}%, Fedility: ${Number(state.model_info.fidelity_test * 100).toFixed(2)}%`,
-    rule_info: (state) => `${state.matrixview.is_zoomed ? 'Zoomed view' : 'Overview'}: ${state.layout.rows.length} of ${state.model_info.num_of_rules} rules`,
+    model_info: (state) => `Dataset: ${state.model_info.dataset}, Model: ${state.model_info.model}, Original Accuracy: ${Number(state.model_info.accuracy * 100).toFixed(2)}%, Fedility: ${Number(state.model_info.info[1].fidelity_test * 100).toFixed(2)}%`,
+    rule_info: (state) => `${state.matrixview.zoom_level > 0 ? 'Zoomed view' : 'Overview'}: ${state.layout.rows.length} of ${state.model_info.num_of_rules} rules`,
     topview_height: (state) => state.matrixview.height,
     filtered_data: (state) => state.data_table.filter(d => state.crossfilter(d) && state.coverfilter(d))
   },

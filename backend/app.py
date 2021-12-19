@@ -106,7 +106,8 @@ class DataLoader():
         self.path_index = {}
         for index, path in enumerate(self.paths):
             self.path_index[path['name']] = index
-        self.selected_indexes = self.model['selected']
+        max_level = max([path['level'] for path in self.paths])
+        self.selected_indexes = [path['name'] for path in self.paths if path['level'] == max_level]#self.model['selected']
         self.features = self.model['features']
         for index, feature in enumerate(self.features):
             if feature['name'] in reassign:
@@ -145,7 +146,7 @@ class DataLoader():
             rtree.add_item(i, path_mat[self.path_index[name]])
         rtree.build(3)
         for i in range(len(self.paths)):
-            if not self.paths[i]['represent']:
+            if self.paths[i]['level'] >= 1 and self.paths[i]['level'] < max_level:
                 self.paths[i]['children'] = []
                 nearest = rtree.get_nns_by_vector(path_mat[i], 1)[0]
                 name = self.selected_indexes[nearest]
@@ -158,7 +159,7 @@ class DataLoader():
 
 original_data = pd.read_csv('../model/data/german_detailed.csv')
 data = pd.read_csv('../model/data/german.csv')
-model = pickle.load(open('../model/output/german1210.pkl', 'rb'))
+model = pickle.load(open('../model/output/german1216.pkl', 'rb'))
 loader = DataLoader(data, model, 'Creditability')
 
 @app.route('/api/data_table', methods=["POST"])

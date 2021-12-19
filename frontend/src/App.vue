@@ -124,7 +124,7 @@ export default {
           .size([width, height])
           .fixedRows(this.highlighted_sample ? 1 : 0)
           .fixedColumns(1)
-          .rowsPerPage(25)    
+          .rowsPerPage(25)
           .defaultNumberFormat(",.0d")
           .style({ border: false })
           .data(reordered_data)  

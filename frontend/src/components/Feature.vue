@@ -76,10 +76,10 @@ export default {
         .text('Data Features')
       
 
-      drawCharts(model_feature_view, this.rules, model_features, (filter) => this.updateRulefilter(filter))
+      drawCharts(model_feature_view, this.rules, model_features, (filter) => this.updateRulefilter(filter), false)
       drawCharts(data_feature_view, this.data_table, data_features, (filter) => this.updateCrossfilter(filter))
 
-      function drawCharts(selection, data, features, update) {
+      function drawCharts(selection, data, features, update, brushable = true) {
         const chart_row = selection
           .selectAll(".chart")
           .data(features)
@@ -124,6 +124,7 @@ export default {
             .x(d.key)
             .width(width - featureview.padding * 4 - featureview.textwidth)
             .height(featureview.chart_height)
+            .brushable(brushable)
             .colors({
               handle: featureview.handle_color,
               glyph: featureview.glyph_color,

@@ -19,15 +19,15 @@
           :height="`${matrixview.height - matrixview.margin.bottom - matrixview.margin.top + 5}`">
         </rect>
       </clipPath>
-      <g class="header_container" 
-        :transform="`translate(${matrixview.margin.left - matrixview.glyph_width},${matrixview.margin.top})`">
-      </g>
       <g class="rule_canvas_container"
         :transform="`translate(${matrixview.margin.left - matrixview.glyph_width},${matrixview.margin.top})`">
         <g class="rule_outer" clip-path="url(#rule_clip)">
           <g class="rule_canvas" :transform="`translate(0, ${current_scroll})`">
           </g>
         </g>
+      </g>
+      <g class="header_container" 
+        :transform="`translate(${matrixview.margin.left - matrixview.glyph_width},${matrixview.margin.top})`">
       </g>
       <g class="status_container" 
         :transform="`translate(${matrixview.margin.left},${matrixview.height - matrixview.margin.bottom})`">
@@ -53,7 +53,7 @@ export default {
     }
   },
   computed: {
-    ...mapState([ 'highlighted_sample', 'data_table', 'data_features', 'matrixview', 'layout', 'primary' ]),
+    ...mapState([ 'highlighted_sample', 'data_table', 'data_features', 'matrixview', 'featureview', 'layout', 'primary' ]),
     ...mapGetters([ 'model_info', 'rule_info' ]),
   },
   watch: {
@@ -84,8 +84,9 @@ export default {
       const self = this
       // const min_confidence = 5
       const matrixview = this.matrixview
+      const featureview = this.featureview
       const { margin, width, height } = matrixview
-      const header_offset = { x: 75, y: 45 } //this.primary.has_primary_key ? 20 : 5 }
+      const header_offset = { x: 100, y: 8 } //this.primary.has_primary_key ? 20 : 5 }
 
       const svg = d3.select(".matrixdiagram")
         .attr('width', width)
@@ -141,7 +142,7 @@ export default {
       const scroll = svg.select('.scrollbar_container')
       scroll.selectAll('*').remove()
 
-      if (view_height < this.layout.height) {
+      if (0 && view_height < this.layout.height) {
         this.current_scroll = 5
         const barheight = view_height * view_height / (this.layout.height + 50)
         new Scrollbar(scroll)
@@ -164,7 +165,7 @@ export default {
         //rule_canvas.selectAll('g.row')
         //  .select(".glyph").select("circle")
         //  .attr("fill", "darkgray")
-        if (self.matrixview.is_zoomed) {
+        if (self.matrixview.zoom_level > 0) {
           self.showRepresentRules()
         } else {
           const selected_rules = layout.rows
@@ -294,6 +295,8 @@ export default {
 
         let col_join = col.enter().append('g')
           .attr('class', 'col')
+          .attr('transform', d => `translate(${d.x},${d.y})`)
+
         col.exit().selectAll('*').remove()
 
         col = header_container.selectAll('g.col')
@@ -308,41 +311,109 @@ export default {
         const col_background = col_join
           .append('g').attr('class', 'col-content')
         col_background.append('rect').attr('class', 'background')
-        //col_background
-        //  .filter(d => !new_cols_x[d.index])
-        //  .append('g').attr('class', 'brush')
         
         function headerInteraction(x) {
           x.on('mouseover', function(){
-            d3.select(this.parentNode).select('rect.background').attr('stroke', 'black').attr('stroke-width', 1)
-            d3.select(this.parentNode).select('path.header').attr('fill-opacity', .8).attr('stroke-width', 1)
-              .attr('stroke', 'black')
+            d3.select(this)
+              .select('rect.background')
+              .attr('stroke', matrixview.cell.highlight_stroke_color)
+              .attr('stroke-width', matrixview.cell.highlight_stroke_width)
+            d3.select(this)
+              .select('path.header')
+              .attr('fill-opacity', matrixview.cell.highlight_header_opacity)
+              .attr('stroke', matrixview.cell.highlight_stroke_color)
+              .attr('stroke-width', matrixview.cell.highlight_stroke_width)
           }).on('mouseout', function(){
-            d3.select(this.parentNode).select('rect.background').attr('stroke', 'none')
-            d3.select(this.parentNode).select('path.header').attr('fill-opacity', .3).attr('stroke-width', .3)
-              .attr('stroke', 'lightgray')
+            d3.select(this)
+              .select('rect.background')
+              .attr('stroke', matrixview.cell.stroke_color)
+              .attr('stroke-width', matrixview.cell.stroke_width)
+            d3.select(this)
+              .select('path.header')
+              .attr('fill-opacity', matrixview.cell.header_opacity)
+              .attr('stroke', matrixview.cell.stroke_color)
+              .attr('stroke-width', matrixview.cell.stroke_width)
           }).on('click', function(ev, d) {
             self.orderColumn(d.index)
           })
         }
 
         col.select('path.header')
+          .attr('fill', 'lightgray')
+          .attr('fill-opacity', matrixview.cell.header_opacity)
+          .attr('stroke', matrixview.cell.stroke_color)
+          .attr('stroke-width', matrixview.cell.stroke_width)
+
+        col.select('path.header')
+          .transition().duration(matrixview.duration)
           .attr('d', d => {
             return `M0,0 L${d.width},0 L${d.width},${-header_offset.y} L${d.width+header_offset.x*1.5},${-header_offset.y-header_offset.x}
                          L${header_offset.x*1.5},${-header_offset.y-header_offset.x} L${0},${-header_offset.y} z`
           })
-          .attr('stroke', 'lightgray')
-          .attr('stroke-width', .3)
-          .attr('fill', 'lightgray')
-          .attr('fill-opacity', .3)
-          .call(headerInteraction)
+
+        col.selectAll('.category').remove()
+
+        console.log('col.data', col.data())
+        col.filter(d => d.show_axis && d.type == 'categoric')
+          .each(function(d){
+            const width = d.width / d.values.length
+            const offset_x = header_offset.x - 20
+            const offset_y = header_offset.y
+            let category = d3.select(this)
+              .selectAll('.category')
+              .data(d.values).enter()
+              .append('g')
+              .attr('class', 'category')
+              .attr('transform', (e, i) => `translate(${width * i}, 0)`)
+            
+            category
+              .append('path')
+              .attr('fill', 'lightgray')
+              .attr('fill-opacity', matrixview.cell.header_opacity)
+              .attr('stroke', matrixview.cell.stroke_color)
+              .attr('stroke-width', matrixview.cell.stroke_width)
+              .attr('d', d => {
+                return `M0,0 L${width},0 L${width},${-offset_y} L${width+offset_x*1.5},${-offset_y-offset_x}
+                            L${offset_x*1.5},${-offset_y-offset_x} L${0},${-offset_y} z`
+              })
+            
+            const dy = width / 2 - header_offset.y + 1.5
+            const len = Math.min(matrixview.maxlen, Math.max(...d.values.map(e => e.length)))
+            category
+              .append('text')
+              .attr('transform', `rotate(-35)`)
+              .attr('font-size', '12px')
+              .attr('font-family', 'Arial')
+              .attr('dx', dy + 28 + (matrixview.maxlen - len) / 2 * 3)
+              .attr('dy', dy)// header_offset.y)
+              .text(name => name.length < matrixview.maxlen ? name : name.slice(0, matrixview.maxlen) + "...")
+              //.style('user-select', 'none')
+          })
+
+        col.call(headerInteraction)
         
         col.select('text.label')
-          .attr('transform', `rotate(-35)`)
+          .attr('transform', d => d.show_axis ? '' : `rotate(-35)`)
           .attr('font-size', '14px')
           .attr('font-family', 'Arial')
-          .attr('dx', d => d.index == self.primary.key ? 18: 27)
-          .attr('dy', 24 - header_offset.y)
+          .attr('dx', d => {
+            if (!d.show_axis) {
+              return 30
+            } else if (d.type == 'categoric') {
+              return 40 + header_offset.x
+            } else {
+              return 40
+            }
+          })
+          .attr('dy', d => {
+            if (!d.show_axis) {
+              return 18 - header_offset.y
+            } else if (d.type == 'categoric') {
+              return -header_offset.x + 3
+            } else {
+              return -header_offset.y - 13
+            }
+          })
           .text(d => {
             let prefix = ''
             for (let i = 0; i < self.matrixview.order_keys.length; ++i) {
@@ -350,25 +421,21 @@ export default {
                 prefix = self.matrixview.order_keys[i].order == 1 ? '▲' : '▼'
               }
             }
-            let name = d.name
-            if (d.name.length > 20) {
-              for (let i = 17; i < name.length; ++i) {
-                if (name[i] == ' ') {
-                  name = name.slice(0, i) + ' ...'
-                  break
-                }
-              }
-            }
+            const maxlen = d.show_axis ? matrixview.maxlen + 5 : matrixview.maxlen
+            let name = d.name.length < maxlen ? d.name : d.name.slice(0, maxlen) + "..."
             return prefix + name
           })
-          .style('user-select', 'none')
+          .style('user-select', 'element')
 
         col.select('rect.background')
-          .attr('width', d => d.width)
+          .attr('stroke', matrixview.cell.stroke_color)
+          .attr('stroke-width', matrixview.cell.stroke_width)
           .attr('height', d => d.height)
-          .attr('stroke', 'lightgray')
-          .attr('stroke-width', matrixview.cell_stroke_width)
-          .attr('fill', 'white')
+          .attr('fill', 'none')
+
+        col.select('rect.background')
+          .transition().duration(matrixview.duration)
+          .attr('width', d => d.width)
 
         col.select('text.count')
           .attr('font-size', '14px')
@@ -377,10 +444,10 @@ export default {
           .attr('dy', d => d.height + 20)
           .text(d => d.count > 0 ? d.count : '')
         
-        col.filter(d => !d.show_axis).each(function(d){
+        col.filter(d => !d.show_axis && d.type == 'numeric').each(function(d){
           d3.select(this).select('g.axis').selectAll('*').remove()
         })
-        col.filter(d => d.show_axis).each(function(d){
+        col.filter(d => d.show_axis && d.type == 'numeric').each(function(d){
           d3.select(this).select('g.axis')
             //.attr('transform', `translate(0,${-header_offset.y + 5})`)
             .call(d3.axisTop(d.scale).ticks(4))
@@ -388,7 +455,7 @@ export default {
         })
         
         col
-          //.transition().duration(matrixview.duration)
+          .transition().duration(matrixview.duration)
           .attr('transform', d => `translate(${d.x},${d.y})`)
       }
       
@@ -428,8 +495,8 @@ export default {
           .attr('class', 'extend')
           .attr('x1', 0)
           .attr('x2', 90)
-          .attr('y1', d => d.glyphheight / 2)
-          .attr('y2', d => d.glyphheight / 2)
+          .attr('y1', d => d.glyphheight / 2 + 1)
+          .attr('y2', d => d.glyphheight / 2 + 1)
           .attr('stroke', 'darkgray')
           .attr('stroke-width', '2px')
 
@@ -437,8 +504,8 @@ export default {
           .append('circle')
           .attr('class', 'extend')
           .attr('cx', 90)
-          .attr('cy', d => d.glyphheight / 2)
-          .attr('r', d => d.glyphheight / 2 - 2)
+          .attr('cy', d => d.glyphheight / 2 + 1)
+          .attr('r', d => d.glyphheight / 2 - 0.5)
           .attr('fill', 'darkgray')
           .attr('stroke', 'none')
 
@@ -488,7 +555,7 @@ export default {
               .attr('stroke', "darkgray")
               .attr("stroke-width", '1.5px')
             d3.select(this).select(".arrow")
-              .style("display", self.matrixview.is_zoomed ? "block" : "none")
+              .style("display", self.matrixview.zoom_level > 0 ? "block" : "none")
               /*
             d3.select(this).selectAll("rect.dot")
               .transition().duration(matrixview.duration / 2)
@@ -501,11 +568,11 @@ export default {
               .attr('stroke-width', '2px')
             d3.select(this.parentNode).select("circle.extend")
               .transition().duration(matrixview.duration / 2)
-              .attr('r', d => d.glyphheight / 2 - 2)
+              .attr('r', d => d.glyphheight / 2 - 0.5)
               .attr('fill', 'darkgray')
           })
           .on('click', function(ev, d){
-            if (self.matrixview.is_zoomed) {
+            if (self.matrixview.zoom_level > 0) {
               self.showRepresentRules()
             } else {
               self.showExploreRules([d.rule.id])
@@ -515,23 +582,23 @@ export default {
         rep_glyph
           .append('rect')
           .attr('class', 'bg')
-          .attr('x', self.matrixview.is_zoomed ? -1.5 : 0)
-          .attr('y', self.matrixview.is_zoomed ? -1 : 1)
-          .attr('width', d => self.matrixview.is_zoomed ? d.attr.num + 2 : d.attr.num)
-          .attr('height', d => self.matrixview.is_zoomed ? d.glyphheight + 3 : d.glyphheight)
+          .attr('x', self.matrixview.zoom_level > 0 ? -1.5 : 0)
+          .attr('y', self.matrixview.zoom_level > 0 ? -1 : 1)
+          .attr('width', d => self.matrixview.zoom_level > 0 ? d.attr.num + 2 : d.attr.num)
+          .attr('height', d => self.matrixview.zoom_level > 0 ? d.glyphheight + 3 : d.glyphheight)
           .attr('fill', '#f7f7f7')
           .attr('stroke', 'darkgray')
           .attr('stroke-width', '1.5px')
 
         rep_glyph
           .append("use")
-          .attr("href", self.matrixview.is_zoomed ? "#markercollapse" : "#markerexpand")
+          .attr("href", self.matrixview.zoom_level > 0 ? "#markercollapse" : "#markerexpand")
           .attr("x", -3)
           .attr("class", "arrow")
           .attr("width", 15)
           .attr("height", 15)
           .attr("y", -3)
-          .style("display", self.matrixview.is_zoomed ? "block" : "none")
+          .style("display", self.matrixview.zoom_level > 0 ? "block" : "none")
           .style("fill", "#333")
 /*
         let represent_glyph_dot = rep_glyph
@@ -676,12 +743,12 @@ export default {
           .attr('width', d => d.width)
           .attr('height', d => d.height)
           .attr('fill', d => 
-            self.matrixview.is_zoomed && d.represent ? 
+            self.matrixview.zoom_level > 0 && d.represent ? 
               d3.interpolateLab('white', d.fill)(0.05) :
               d3.interpolateLab('white', d.fill)(0.25)
             )
           .attr('stroke', d => 
-            self.matrixview.is_zoomed && d.represent ? '#555' : 'none'
+            self.matrixview.zoom_level > 0 && d.represent ? '#555' : 'none'
           )
           .attr('stroke-width', '1px')
           .attr('opacity', 1)
@@ -714,23 +781,23 @@ export default {
           .attr('width', d => d.x1 - d.x0 - 1.5)
           .attr('height', d => d.h - 1.5)
           .attr('fill', d => {
-              if (self.matrixview.is_zoomed && d.represent) {
+              if (self.matrixview.zoom_level > 0 && d.represent) {
                 return d3.interpolateLab('#ccc', d.fill)(0.2)
               } else if (!d.neg) {
                 return d3.interpolateLab('white', d.fill)(1)
               } else {
-                return 'none'
+                return 'white'
               }
           })
           .attr('stroke', d => {
-              if (self.matrixview.is_zoomed && d.represent) {
+              if (self.matrixview.zoom_level > 0 && d.represent) {
                 return d3.interpolateLab('#ccc', d.fill)(0.2)
               } else {
                 return d3.interpolateLab('white', d.fill)(1)
               }
           })
           .attr('stroke-width', '1.5px')
-
+        /*
         cell_bars.selectAll('line.bar')
           .data(d => d.elements)
           .filter(d => !(self.matrixview.is_zoomed && d.represent) && d.neg)
@@ -750,8 +817,8 @@ export default {
           .attr('y2', d => 1)
           .attr('stroke', d => d3.interpolateLab('white', d.fill)(1))
           .attr('stroke-width', '1.5px')
-
-        const chart_cell = cell.filter(d => self.matrixview.is_zoomed && d.represent)
+        */
+        const chart_cell = cell.filter(d => self.matrixview.zoom_level > 0 && d.represent)
         chart_cell.each(function(d){
           const data = []
           for (let i of d.samples) {
