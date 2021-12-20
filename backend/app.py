@@ -159,7 +159,7 @@ class DataLoader():
 
 original_data = pd.read_csv('../model/data/german_detailed.csv')
 data = pd.read_csv('../model/data/german.csv')
-model = pickle.load(open('../model/output/german1216.pkl', 'rb'))
+model = pickle.load(open('../model/output/german1211.pkl', 'rb'))
 loader = DataLoader(data, model, 'Creditability')
 
 @app.route('/api/data_table', methods=["POST"])

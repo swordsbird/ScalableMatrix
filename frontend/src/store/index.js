@@ -17,7 +17,7 @@ export default new Vuex.Store({
     rulefilter: () => 1,
     crossfilter: () => 1,
     coverfilter: () => 1,
-    highlighted_sample: null,
+    highlighted_sample: undefined,
     instances: [],
     data_features: [],
     data_table: [],
@@ -34,11 +34,10 @@ export default new Vuex.Store({
       margin: {
         top: 130,
         right: 180,
-        bottom: 100,
+        bottom: 50,
         left: 90,
       },
       width: 1500,
-      max_width: 1500,
       height: 800,
       coverage_width: 50,
       glyph_width: 60,
@@ -124,6 +123,8 @@ export default new Vuex.Store({
         return ret
       })
       state.data_shaps = shap
+      // console.log(shap)
+      // console.log(values)
       //document.getElementById("feature_view").appendChild(summary)
     },
     updateTooltip(state, attr) {
@@ -163,13 +164,9 @@ export default new Vuex.Store({
         })
       }
     },
-    changePageSize(state, { width, height }) {
-      state.page_width = width
-      state.page_height = height
-      state.matrixview.height = height - state.tableview.height - 64
-    },
-    changeMatrixWidth(state, width) {
-      state.matrixview.width = width - state.matrixview.padding * 2
+    changeMatrixSize (state, { width, height }) {
+      state.matrixview.width = width
+      state.matrixview.height = height
     },
     ready(state, status) {
       state.is_ready = status
@@ -178,7 +175,7 @@ export default new Vuex.Store({
       if (state.highlighted_sample != sample_id) {
         state.highlighted_sample = sample_id
       } else {
-        state.highlighted_sample = null
+        state.highlighted_sample = undefined
       }
     },
     updateMatrixLayout(state) {
@@ -226,8 +223,6 @@ export default new Vuex.Store({
       } else {
         if (state.matrixview.zoom_level == 0) {
           has_primary_key = 1
-          console.log('sort by keys', state.matrixview.order_keys)
-          console.log(rules)
           rules = rules.sort((a, b) => {
             for (let index = 0; index < state.matrixview.order_keys.length; ++index) {
               const key = state.matrixview.order_keys[index].key
@@ -393,7 +388,6 @@ export default new Vuex.Store({
       for (let x = main_start_x, i = 0; i < features.length; ++i) {
         const feature = features[i]
         let show_axis = orderkey_set.has(feature.index)
-        if (show_axis) console.log(feature)
         const width = featureScale(feature.importance)
           + (show_axis ? (state.matrixview.focused_feature.extend_width) : 0)
         //if (feature.name != 'others') {
@@ -432,7 +426,6 @@ export default new Vuex.Store({
         }*/
         x += width
       }
-      console.log(cols)
 
       for (let i = 0; i < extended_cols.length; ++i) {
         const width = state.matrixview.coverage_width
@@ -627,7 +620,7 @@ export default new Vuex.Store({
     model_info: (state) => `Dataset: ${state.model_info.dataset}, Model: ${state.model_info.model}, Original Accuracy: ${Number(state.model_info.accuracy * 100).toFixed(2)}%, Fedility: ${Number(state.model_info.info[1].fidelity_test * 100).toFixed(2)}%`,
     rule_info: (state) => `${state.matrixview.zoom_level > 0 ? 'Zoomed view' : 'Overview'}: ${state.layout.rows.length} of ${state.model_info.num_of_rules} rules`,
     topview_height: (state) => state.matrixview.height,
-    filtered_data: (state) => state.data_table.filter(d => state.crossfilter(d) && state.coverfilter(d))
+    filtered_data: (state) => state.data_table.filter(d => state.crossfilter(d))
   },
   actions: {
     /*
@@ -684,8 +677,8 @@ export default new Vuex.Store({
     async updateMatrixWidth({ commit }, width) {
       commit('changeMatrixWidth', width)
     },
-    async updatePageSize({ commit }, { width, height }) {
-      commit('changePageSize', { width, height })
+    async updateMatrixSize({ commit }, { width, height }) {
+      commit('changeMatrixSize', { width, height })
       commit('updateMatrixLayout')
     },
     async updateRulefilter({ commit, state }, filter) {
@@ -696,7 +689,7 @@ export default new Vuex.Store({
       commit('changeCrossfilter', filter)
       commit('updateMatrixLayout')
     },
-    async highlightSample({ commit }, sample_id) {
+    highlightSample({ commit }, sample_id) {
       commit('highlight_sample', sample_id)
     },
     async tooltip({ commit }, { type, data }) {

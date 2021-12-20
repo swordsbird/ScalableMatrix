@@ -1,6 +1,6 @@
 <template>
-  <div class="feature-container">
-    <svg ref="feature_parent"></svg>
+  <div class="feature-container" :style="`position: absolute; ${positioning}; overflow-y: scroll`" v-resize="onResize">
+    <svg ref="feature_parent" style="width: 100%"></svg>
   </div>
 </template>
 
@@ -12,17 +12,19 @@ import BrushableBarchart from "../libs/brushablechart";
 
 export default {
   name: "Feature",
-  data() {
-    return {
-    };
+  props: {
+    positioning: {
+      default: 'top: 0px; left: 0px; right: 0px; bottom: 0px',
+      type: String
+    },
+    render: Boolean
   },
-  props: ["render"],
   computed: {
     ...mapState(["data_table", "data_header", "featureview", "rules"]),
   },
   methods: {
     ...mapActions(['tooltip', 'updateCrossfilter', 'updateRulefilter']),
-    async renderView() {
+    renderView() {
       const width = this.$refs.feature_parent
         .parentNode
         .getBoundingClientRect()
@@ -41,6 +43,7 @@ export default {
       let data_feature_height = (data_features.length + 1) * featureview.column_height
       
       const svg = d3.select(this.$refs.feature_parent)
+      svg.selectAll("*").remove()
       const height = model_feature_height + data_feature_height
       svg.attr("height", height)
         .attr("width", width)
@@ -154,16 +157,12 @@ export default {
         });
       }
     },
-    async onResize() {
-      await this.renderView();
+    onResize() {
+      this.renderView()
     },
   },
-  watch: {
-    async render(val) {
-      if (val) {
-        await this.renderView();
-      }
-    },
-  },
+  mounted () {
+    this.renderView()
+  }
 };
 </script>

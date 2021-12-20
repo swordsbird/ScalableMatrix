@@ -1,5 +1,5 @@
 <template>
-  <div class="matrix-container" ref="matrix_parent">
+  <div ref="matrix_parent" :style="`position: absolute; ${positioning}`" v-resize="onResize">
     <!--div class="text-center" v-if="matrixview.order_keys.length > 0">
       Order by:
       <v-btn
@@ -13,7 +13,7 @@
         {{ item.name }} {{ item.order == 1 ? '' : '(Descending)'}}
       </v-btn>
     </div-->
-    <svg class="matrixdiagram">
+    <svg class="matrixdiagram" style="width: 100%; height: 100%">
       <clipPath id="rule_clip">
         <rect :width="`${matrixview.width + 5}`" 
           :height="`${matrixview.height - matrixview.margin.bottom - matrixview.margin.top + 5}`">
@@ -30,7 +30,7 @@
         :transform="`translate(${matrixview.margin.left - matrixview.glyph_width},${matrixview.margin.top})`">
       </g>
       <g class="status_container" 
-        :transform="`translate(${matrixview.margin.left},${matrixview.height - matrixview.margin.bottom})`">
+        :transform="`translate(${matrixview.margin.left}, ${matrixview.height - matrixview.margin.bottom})`">
       </g>
       <g class="scrollbar_container"></g>
     </svg>
@@ -45,6 +45,12 @@ import Scrollbar from "../libs/scrollbar";
 
 export default {
   name: 'Matrix',
+  props: {
+    positioning: {
+      default: 'top: 0px; left: 0px; right: 0px; bottom: 0px',
+      type: String
+    }
+  },
   data() {
     return {
       current_col: null,
@@ -66,19 +72,20 @@ export default {
       this.render()
     }
   },
-  beforeDestroy () {
-    if (typeof window === 'undefined') return
-    window.removeEventListener('resize', this.onResize, { passive: true })
-  },
-  async mounted() {
-    window.addEventListener('resize', this.onResize, { passive: true })
-    this.onResize()
-  },
+  // beforeDestroy () {
+  //   if (typeof window === 'undefined') return
+  //   window.removeEventListener('resize', this.onResize, { passive: true })
+  // },
+  // async mounted() {
+  //   window.addEventListener('resize', this.onResize, { passive: true })
+  //   this.onResize()
+  // },
   methods: {
-    ...mapActions([ 'tooltip', 'orderColumn', 'orderRow', 'showRepresentRules', 'showExploreRules', 'updateMatrixWidth' ]),
+    ...mapActions([ 'tooltip', 'orderColumn', 'orderRow', 'showRepresentRules', 'showExploreRules', 'updateMatrixSize' ]),
     onResize(){
       const width = this.$refs.matrix_parent.getBoundingClientRect().width
-      this.updateMatrixWidth(width)
+      const height = this.$refs.matrix_parent.getBoundingClientRect().height
+      this.updateMatrixSize({ width, height })
     },
     render() {
       const self = this
@@ -89,8 +96,8 @@ export default {
       const header_offset = { x: 100, y: 8 } //this.primary.has_primary_key ? 20 : 5 }
 
       const svg = d3.select(".matrixdiagram")
-        .attr('width', width)
-        .attr('height', height)
+        .attr('width', this.matrixview.width)
+        .attr('height', this.matrixview.height)
 
       /*<svg style="width:24px;height:24px" viewBox="0 0 24 24">
     <path fill="currentColor" d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
@@ -208,8 +215,8 @@ export default {
         count_btn.append('rect')
           .attr('class', 'background')
           .attr('y', 0)
-          .attr('x', -1)
-          .attr('width', 80)
+          .attr('x', -20)
+          .attr('width', 98)
           .attr('height', 20)
           .attr('stroke', 'lightgray')
           .attr('stroke-width', .3)
@@ -220,35 +227,40 @@ export default {
           .attr('class', 'background')
           .attr('y', 4)
           .attr('x', 35)
-          .attr('width', layout.width - self.matrixview.margin.left)
+          .attr('width', layout.width - self.matrixview.margin.left - 15)
           .attr('height', 20)
           .attr('stroke', 'lightgray')
           .attr('fill', 'none')
+
+        count_btn.append('path')
+          .attr('d', "M41 288h238c21.4 0 32.1 25.9 17 41L177 448c-9.4 9.4-24.6 9.4-33.9 0L24 329c-15.1-15.1-4.4-41 17-41zm255-105L177 64c-9.4-9.4-24.6-9.4-33.9 0L24 183c-15.1 15.1-4.4 41 17 41h238c21.4 0 32.1-25.9 17-41z")
+          .attr('transform', "translate(74.5, 4) scale(0.04) rotate(90)")
+          .attr("opacity", matrixview.sort_by_cover_num ? .8 : .2)
         
         count_btn.append('text')
-          .attr('dx', 5)
-          .attr('dy', 15)
+          .attr('dx', -15)
+          .attr('dy', 14)
           .attr('font-size', '14px')
           .attr('font-family', 'Arial')
           .text('cover num')
 
-        const status_text = status_container.append('g')
-          .attr('class', 'status')
-          .attr('transform', 'translate(0, 70)')
-          .style('user-select', 'none')
+        // const status_text = status_container.append('g')
+        //   .attr('class', 'status')
+        //   .attr('transform', 'translate(0, 70)')
+        //   .style('user-select', 'none')
 
-        status_text.append('text')
-          .attr('dx', layout.width + self.matrixview.margin.right - self.model_info.length * 8 + 30)
-          .attr('font-size', '16px')
-          .attr('font-family', 'Arial')
-          .text(self.model_info)
+        // status_text.append('text')
+        //   .attr('dx', layout.width + self.matrixview.margin.right - self.model_info.length * 8 + 30)
+        //   .attr('font-size', '16px')
+        //   .attr('font-family', 'Arial')
+        //   .text(self.model_info)
 
-        status_text.append('text')
-          .attr('dx', layout.width + self.matrixview.margin.right - self.rule_info.length * 8)
-          .attr('font-size', '16px')
-          .attr('font-family', 'Arial')
-          .attr('dy', 16)
-          .text(self.rule_info)
+        // status_text.append('text')
+        //   .attr('dx', layout.width + self.matrixview.margin.right - self.rule_info.length * 8)
+        //   .attr('font-size', '16px')
+        //   .attr('font-family', 'Arial')
+        //   .attr('dy', 16)
+        //   .text(self.rule_info)
 
         const status_orders = status_container.select('g.order')
           .data(self.matrixview.order_keys).enter()
@@ -778,8 +790,8 @@ export default {
           .data(d => d.elements)
           .attr('x', d => d.x0 + 0.75)
           .attr('y', 1)
-          .attr('width', d => d.x1 - d.x0 - 1.5)
-          .attr('height', d => d.h - 1.5)
+          .attr('width', d => Math.max(d.x1 - d.x0 - 1.5, 0))
+          .attr('height', d => Math.max(d.h - 1.5, 0))
           .attr('fill', d => {
               if (self.matrixview.zoom_level > 0 && d.represent) {
                 return d3.interpolateLab('#ccc', d.fill)(0.2)
@@ -874,7 +886,7 @@ export default {
           .transition().duration(matrixview.duration)
           .attr('transform', d => `translate(${d.x},${d.y})`)
           .transition().duration(matrixview.duration)
-          .style('opacity', d => self.highlighted_sample == null ? 1 : d.samples.has(self.highlighted_sample) ? 1 : 0.3)
+          .style('opacity', d => self.highlighted_sample === undefined ? 1 : d.samples.has(self.highlighted_sample) ? 1 : 0.3)
 //          .style('opacity', 1)//d => d.rule.represent ? 1 : 0.5)
 
       }
