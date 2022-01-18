@@ -81,7 +81,7 @@ export default {
   //   this.onResize()
   // },
   methods: {
-    ...mapActions([ 'tooltip', 'orderColumn', 'orderRow', 'showRepresentRules', 'showExploreRules', 'updateMatrixSize' ]),
+    ...mapActions([ 'tooltip', 'orderColumn', 'orderRow', 'showRules', 'updateMatrixSize' ]),
     onResize(){
       const width = this.$refs.matrix_parent.getBoundingClientRect().width
       const height = this.$refs.matrix_parent.getBoundingClientRect().height
@@ -91,8 +91,6 @@ export default {
       const self = this
       // const min_confidence = 5
       const matrixview = this.matrixview
-      const featureview = this.featureview
-      const { margin, width, height } = matrixview
       const header_offset = { x: 100, y: 8 } //this.primary.has_primary_key ? 20 : 5 }
 
       const svg = d3.select(".matrixdiagram")
@@ -172,14 +170,16 @@ export default {
         //rule_canvas.selectAll('g.row')
         //  .select(".glyph").select("circle")
         //  .attr("fill", "darkgray")
+        /*
         if (self.matrixview.zoom_level > 0) {
           self.showRepresentRules()
         } else {
-          const selected_rules = layout.rows
-            .filter(d => d.y >= selection[0] && d.y + d.height <= selection[1])
-            .map(d => d.rule.id)
-          self.showExploreRules(selected_rules)
-        }
+        */
+        const selected_rules = layout.rows
+          .filter(d => d.y >= selection[0] && d.y + d.height <= selection[1])
+          .map(d => d.rule.id)
+        self.showRules(selected_rules)
+        //}
       }
 
       function brushing({selection}) {
@@ -305,11 +305,11 @@ export default {
         let col = header_container.selectAll('g.col')
           .data(cols_data, d => d.index)
 
+        col.exit().selectAll('*').remove()
+
         let col_join = col.enter().append('g')
           .attr('class', 'col')
           .attr('transform', d => `translate(${d.x},${d.y})`)
-
-        col.exit().selectAll('*').remove()
 
         col = header_container.selectAll('g.col')
           .data(cols_data, d => d.index)
@@ -322,6 +322,7 @@ export default {
 
         const col_background = col_join
           .append('g').attr('class', 'col-content')
+
         col_background.append('rect').attr('class', 'background')
         
         function headerInteraction(x) {
@@ -363,9 +364,22 @@ export default {
                          L${header_offset.x*1.5},${-header_offset.y-header_offset.x} L${0},${-header_offset.y} z`
           })
 
+        col.selectAll('g.hint').remove()
+        const hint_glyph = col.filter(d => d.hint_change)
+          .append('g')
+          .attr('class', 'hint')
+          .attr('transform', `translate(${header_offset.x*1.5},${-header_offset.y-header_offset.x})`)
+        
+        hint_glyph.append('text')
+          .attr('dx', 4)
+          .attr('dy', -2)
+          .attr('font-size', '14px')
+          .attr('font-family', 'Arial')
+          .attr('fill', 'green')
+          .text(d => `▲ +${d.delta}`)
+
         col.selectAll('.category').remove()
 
-        console.log('col.data', col.data())
         col.filter(d => d.show_axis && d.type == 'categoric')
           .each(function(d){
             const width = d.width / d.values.length
@@ -496,7 +510,7 @@ export default {
           
         row = row.merge(row_join)
         row.select('.glyph').selectAll('*').remove()
-        let represent_glyph = row.filter(d => d.rule.represent)
+        let represent_glyph = row//.filter(d => d.rule.represent)
           .select('.glyph')
           //.attr("opacity", .5)
 
@@ -505,7 +519,7 @@ export default {
         represent_glyph
           .append('line')
           .attr('class', 'extend')
-          .attr('x1', 0)
+          .attr('x1', d => d.rule.represent ? 0 : 30)
           .attr('x2', 90)
           .attr('y1', d => d.glyphheight / 2 + 1)
           .attr('y2', d => d.glyphheight / 2 + 1)
@@ -525,16 +539,18 @@ export default {
           .append('g')
           .attr('class', 'represent_glyph')
           .on('mousemove', function(ev, d) {
+            if (d.attr.num_children == 0) return
             self.tooltip({ type: "text", data: `represent ${Number(d.attr.num_children)} rules`})
             self.tooltip({ type: "position", data: { x: ev.pageX, y: ev.pageY }})
           })
-          .on('mouseover', function(){
+          .on('mouseover', function(ev, d){
+            if (d.attr.num_children == 0) return
             self.tooltip({ type: "show" })
             d3.select(this).select("rect.bg")
               .transition().duration(matrixview.duration / 2)
-              .attr('x', -1.5)
-              .attr('y', -1)
-              .attr('width', d => d.attr.num + 2)
+              .attr('x', d => (d.rule.represent ? 0 : 30) - 1)
+              .attr('y', 1 - 1.5)
+              .attr('width', d => (d.rule.represent ? d.attr.num : (d.attr.num * 0.7)) + 2)
               .attr('height', d => d.glyphheight + 3)
               .attr('stroke', "#333")
               .attr("stroke-width", '2.5px')
@@ -556,18 +572,19 @@ export default {
               .attr('r', d => d.glyphheight / 2)
               .attr('fill', '#333')
           })
-          .on('mouseout', function(){
+          .on('mouseout', function(ev, d){
+            if (d.attr.num_children == 0) return
             self.tooltip({ type: "hide" })
             d3.select(this).select("rect.bg")
               .transition().duration(matrixview.duration / 2)
-              .attr('x', 0)
+              .attr('x', d => d.rule.represent ? 0 : 30)
               .attr('y', 1)
-              .attr('width', d => d.attr.num)
+              .attr('width', d => d.rule.represent ? d.attr.num : (d.attr.num * 0.7))
               .attr('height', d => d.glyphheight)
               .attr('stroke', "darkgray")
               .attr("stroke-width", '1.5px')
             d3.select(this).select(".arrow")
-              .style("display", self.matrixview.zoom_level > 0 ? "block" : "none")
+              .style("display", d => (self.matrixview.zoom_level > 0 && d.rule.level < self.matrixview.zoom_level) ? "block" : "none")
               /*
             d3.select(this).selectAll("rect.dot")
               .transition().duration(matrixview.duration / 2)
@@ -584,33 +601,35 @@ export default {
               .attr('fill', 'darkgray')
           })
           .on('click', function(ev, d){
-            if (self.matrixview.zoom_level > 0) {
-              self.showRepresentRules()
+            console.log(d)
+            if (self.matrixview.zoom_level > d.rule.level) {
+              self.showRules(null)
             } else {
-              self.showExploreRules([d.rule.id])
+              self.showRules([d.rule.id])
             }
           })
 
         rep_glyph
           .append('rect')
           .attr('class', 'bg')
-          .attr('x', self.matrixview.zoom_level > 0 ? -1.5 : 0)
-          .attr('y', self.matrixview.zoom_level > 0 ? -1 : 1)
-          .attr('width', d => self.matrixview.zoom_level > 0 ? d.attr.num + 2 : d.attr.num)
-          .attr('height', d => self.matrixview.zoom_level > 0 ? d.glyphheight + 3 : d.glyphheight)
+          .attr('x', d => d.rule.represent ? 0 : 30)
+          .attr('y', 1)
+          .attr('width', d => d.rule.represent ? d.attr.num : (d.attr.num * 0.7))
+          .attr('height', d => d.glyphheight)
           .attr('fill', '#f7f7f7')
           .attr('stroke', 'darkgray')
+          .style("display", d => (d.attr.num_children > 0 || d.rule.level == 0) ? "block" : "none")
           .attr('stroke-width', '1.5px')
 
         rep_glyph
           .append("use")
-          .attr("href", self.matrixview.zoom_level > 0 ? "#markercollapse" : "#markerexpand")
-          .attr("x", -3)
+          .attr("href", d => self.matrixview.zoom_level == d.rule.level ? "#markerexpand" : "#markercollapse")
+          .attr("x",  d => d.rule.represent ? -3 : 27)
           .attr("class", "arrow")
           .attr("width", 15)
           .attr("height", 15)
           .attr("y", -3)
-          .style("display", self.matrixview.zoom_level > 0 ? "block" : "none")
+          .style("display", d => (self.matrixview.zoom_level > 0 && d.rule.level < self.matrixview.zoom_level) ? "block" : "none")
           .style("fill", "#333")
 /*
         let represent_glyph_dot = rep_glyph
@@ -647,10 +666,10 @@ export default {
         let nonrepresent_glyph = row.filter(d => !d.rule.represent)
           .select('.glyph')
           //.attr("opacity", .5)
-
+/*
         nonrepresent_glyph
           .append('line')
-          .attr('x1', 50)
+          .attr('x1', 30)
           .attr('x2', 90)
           .attr('y1', d => d.glyphheight / 2)
           .attr('y2', d => d.glyphheight / 2)
@@ -661,19 +680,38 @@ export default {
           .append('circle')
           .attr('cx', 90)
           .attr('cy', d => d.glyphheight / 2)
-          .attr('r', d => d.glyphheight / 2 - 2)
+          .attr('r', d => d.glyphheight / 2 - 0.5)
           .attr('fill', 'darkgray')
           .attr('stroke', 'none')
-
+*/
         nonrepresent_glyph
           .append('line')
-          .attr('x1', 50)
-          .attr('x2', 50)
+          .attr('x1', 30)
+          .attr('x2', 30)
           .attr('y1', d => d.glyphheight / 2 - d.lastheight)
           .attr('y2', d => d.glyphheight / 2)
           .attr('stroke', 'darkgray')
           .attr('stroke-width', '2px')
-        
+          .attr('class', 'parent')
+
+        nonrepresent_glyph
+          .select('line.parent')
+          .attr('opacity', 0)
+
+        nonrepresent_glyph
+          .select('line.parent')
+          .transition().duration(matrixview.duration)
+          .delay(matrixview.duration)
+          .attr('opacity', 1)
+
+/*
+        nonrepresent_glyph
+          .append('rect')
+          .attr('class', 'bg')
+          .attr('fill', '#f7f7f7')
+          .attr('stroke', 'darkgray')
+          .attr('stroke-width', '1.5px')
+*/
         row_join = row_join.merge(row)
         
         const brush = d3.brush()
@@ -681,7 +719,7 @@ export default {
 
         canvas_brush
           .call(
-            d3.brushY().extent([[xrange[0] - 60, yrange[0]], [xrange[0], yrange[1]]])
+            d3.brushY().extent([[xrange[0] - 30, yrange[0]], [xrange[0], yrange[1]]])
             .on("brush", brushing)
             .on("end", brushed)
           )
@@ -741,7 +779,7 @@ export default {
             } else {
               self.tooltip({
                 type: "text",
-                data: `${Number(Math.max(d.feature.range[0], d.cond.range[0])).toFixed(3)} <= ${d.name} < ${Number(Math.min(d.feature.range[1], d.cond.range[1])).toFixed(3)}`
+                data: `${Number(Math.max(d.feature.range[0], d.cond.range[0])).toFixed(3)} < ${d.name} <= ${Number(Math.min(d.feature.range[1], d.cond.range[1])).toFixed(3)}`
               })
             }
             self.tooltip({ type: "position", data: { x: ev.pageX, y: ev.pageY }})
@@ -754,14 +792,11 @@ export default {
           .attr('x', d => d.x)
           .attr('width', d => d.width)
           .attr('height', d => d.height)
-          .attr('fill', d => 
-            self.matrixview.zoom_level > 0 && d.represent ? 
+          .attr('fill', d => d.show_hist ? 
               d3.interpolateLab('white', d.fill)(0.05) :
               d3.interpolateLab('white', d.fill)(0.25)
             )
-          .attr('stroke', d => 
-            self.matrixview.zoom_level > 0 && d.represent ? '#555' : 'none'
-          )
+          .attr('stroke', d => d.show_hist ? '#555' : 'none')
           .attr('stroke-width', '1px')
           .attr('opacity', 1)
 
@@ -793,7 +828,7 @@ export default {
           .attr('width', d => Math.max(d.x1 - d.x0 - 1.5, 0))
           .attr('height', d => Math.max(d.h - 1.5, 0))
           .attr('fill', d => {
-              if (self.matrixview.zoom_level > 0 && d.represent) {
+              if (d.show_hist) {
                 return d3.interpolateLab('#ccc', d.fill)(0.2)
               } else if (!d.neg) {
                 return d3.interpolateLab('white', d.fill)(1)
@@ -802,7 +837,7 @@ export default {
               }
           })
           .attr('stroke', d => {
-              if (self.matrixview.zoom_level > 0 && d.represent) {
+              if (d.show_hist) {
                 return d3.interpolateLab('#ccc', d.fill)(0.2)
               } else {
                 return d3.interpolateLab('white', d.fill)(1)
@@ -830,9 +865,10 @@ export default {
           .attr('stroke', d => d3.interpolateLab('white', d.fill)(1))
           .attr('stroke-width', '1.5px')
         */
-        const chart_cell = cell.filter(d => self.matrixview.zoom_level > 0 && d.represent)
+        const chart_cell = cell.filter(d => d.show_hist)
         chart_cell.each(function(d){
           const data = []
+          //console.log(d.samples, d.feature)
           for (let i of d.samples) {
             data.push(self.data_table[i])
           }

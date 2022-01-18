@@ -14,6 +14,8 @@ class NpEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
+        if isinstance(obj, np.bool_):
+            return 0 if obj else 1
         if isinstance(obj, np.floating):
             return float(obj)
         if isinstance(obj, np.ndarray):
@@ -25,77 +27,89 @@ app = Flask(__name__,
             template_folder = "./dist")
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-reassign = {
-    'Creditability' : ['No', 'Yes' ], 
-    'Payment Status of Previous Credit' : [
-        'no credits taken/ all credits paid back duly',
-        'all credits at this bank paid back duly',
-        'existing credits paid back duly till now',
-        'delay in paying off in the past',
-        'critical account/ other credits existing (not at this bank)',
-    ],
-    'Purpose' : [
-        'car (new)',
-        'car (used)',
-        'furniture/equipment',
-        'radio/television',
-        'domestic appliances',
-        'repairs',
-        'education',
-        '(vacation - does not exist?)',
-        'retraining',
-        'business',
-        'others'
-    ],
-    'Value Savings/Stocks': [
-        '< 100 DM',
-        '100 <= ... < 500 DM',
-        '500 <= ... < 1000 DM',
-        '>= 1000 DM',
-        'unknown/ no savings account',
-    ],
-    'Length of current employment': [
-        'unemployed',
-        '< 1 year',
-        '1 <= ... < 4 years',
-        '4 <= ... < 7 years',
-        '>= 7 years'
-    ],
-    'Sex & Marital Status': [
-        'male : divorced/separated',
-        'female : divorced/separated/married',
-        'male : single',
-        'male : married/widowed',
-        'female : single'
-    ],
-    'Guarantors': [
-        'none',
-        'co-applicant',
-        'guarantor'
-    ],
-    'Most valuable available asset': [
-        'real estate',
-        'building society savings agreement/ life insurance',
-        'car or other',
-        'unknown / no property'
-    ],
-    'Other installment plans': ['bank', 'stores', 'none'],
-    'Type of apartment': ['rent', 'own', 'for free'],
-    'Occupation': [
-        'unemployed/ unskilled - non-resident',
-        'unskilled - resident',
-        'skilled employee / official',
-        'management/ self-employed/ highly qualified employee/ officer'
-    ],
-    'Account Balance': [
-        '... < 0 DM',
-        '0 <= ... < 200 DM',
-        '... >= 200 DM / salary assignments for at least 1 year',
-        'no checking account',
-    ],
-    'Telephone': ['No', 'Yes'],
-    'Foreign Worker': ['Yes', 'No'],
-}
+dataset = 'german'
+#dataset = 'bankruptcy'
+
+if dataset == 'german':
+    reassign = {
+        'credit_risk' : ['No', 'Yes'], 
+        'credit_history' : [
+            "delay in paying off in the past",
+            "critical account/other credits elsewhere",
+            "no credits taken/all credits paid back duly",
+            "existing credits paid back duly till now",
+            "all credits at this bank paid back duly",
+        ],
+        'purpose' : [
+            "others",
+            "car (new)",
+            "car (used)",
+            "furniture/equipment",
+            "radio/television",
+            "domestic appliances",
+            "repairs",
+            "education", 
+            "vacation",
+            "retraining",
+            "business"
+        ],
+        'installment_rate': [">= 35", "25 <= ... < 35", "20 <= ... < 25",  "< 20"],
+        'present_residence': [
+            "< 1 yr", 
+            "1 <= ... < 4 yrs",
+            "4 <= ... < 7 yrs", 
+            ">= 7 yrs"
+        ],
+        'number_credits': ["1", "2-3", "4-5", ">= 6"],
+        'people_liable': ["3 or more", "0 to 2"],
+        'savings': [
+            "unknown/no savings account",
+            "... <  100 DM", 
+            "100 <= ... <  500 DM",
+            "500 <= ... < 1000 DM", 
+            "... >= 1000 DM",
+        ],
+        'employment_duration': [
+            "unemployed", 
+            "< 1 yr", 
+            "1 <= ... < 4 yrs",
+            "4 <= ... < 7 yrs", 
+            ">= 7 yrs"
+        ],
+        'personal_status_sex': [
+            "married male",
+            "not married male",
+        ],
+        'other_debtors': [
+            'none',
+            'co-applicant',
+            'guarantor'
+        ],
+        'property': [
+            "unknown / no property",
+            "car or other",
+            "building soc. savings agr./life insurance", 
+            "real estate"
+        ],
+        'other_installment_plans': ['bank', 'stores', 'none'],
+        'housing': ["for free", "rent", "own"],
+        'job': [
+            'unemployed/ unskilled - non-resident',
+            'unskilled - resident',
+            'skilled employee / official',
+            'management/ self-employed/ highly qualified employee/ officer'
+        ],
+        'status': [
+            "no checking account",
+            "... < 0 DM",
+            "0<= ... < 200 DM",
+            "... >= 200 DM / salary for at least 1 year",
+        ],
+        'telephone': ['No', 'Yes'],
+        'foreign_worker': ['Yes', 'No'],
+    }
+else:
+    reassign = {}
 
 class DataLoader():
     def __init__(self, data, model, target):
@@ -117,56 +131,79 @@ class DataLoader():
         self.X = self.data_table.drop(target, axis=1).values
         self.y = self.data_table[target].values
 
-        path_mat = np.array([path['sample'] + [path['output']] for path in self.paths])
+        path_mat = np.array([path['sample'] for path in self.paths])
         np.seterr(divide='ignore',invalid='ignore')
         path_mat = path_mat.astype(np.float32)
+
+        path_dist = pairwise_distances(X = path_mat, metric='jaccard')
         tree = AnnoyIndex(len(path_mat[0]), 'euclidean')
         for i in range(len(path_mat)):
-            s = np.sum(path_mat[i, :-1])
-            path_mat[i, :-1] /= s
+            s = np.sum(path_mat[i])
+            path_mat[i] /= s
             tree.add_item(i, path_mat[i])
         tree.build(10)
         self.tree = tree
-
-        path_dist = pairwise_distances(X = path_mat)
         K = int(np.ceil(np.sqrt(len(self.X))))
+        K = 10
         clf = LocalOutlierFactor(n_neighbors=K, metric="precomputed")
         clf.fit(path_dist)
         path_lof = -clf.negative_outlier_factor_
+        print('rule LOF', min(path_lof), max(path_lof))
+
+        clf2 = LocalOutlierFactor(n_neighbors=K, metric="precomputed")
+        path_dist2 = pairwise_distances(X = path_mat.transpose(), metric='jaccard')
+        clf2.fit(path_dist2)
+        path_lof2 = -clf2.negative_outlier_factor_
+        print('sample LOF', min(path_lof2), max(path_lof2))
 
         for i in range(len(self.paths)):
             self.paths[i]['lof'] = float(path_lof[i])
             self.paths[i]['represent'] = False
+            self.paths[i]['children'] = []
 
-        rtree = AnnoyIndex(len(path_mat[0]), 'euclidean')
-        for i, name in enumerate(self.selected_indexes):
-            path = self.paths[self.path_index[name]]
-            path['represent'] = True
-            path['children'] = []
-            rtree.add_item(i, path_mat[self.path_index[name]])
-        rtree.build(3)
+        for level in range(max_level, 0, -1):
+            ids = []
+            for i in range(len(self.paths)):
+                if self.paths[i]['level'] == level:
+                    ids.append(i)
+            for i in range(len(self.paths)):
+                if self.paths[i]['level'] == level - 1:
+                    self.paths[i]['children'] = []
+                    nearest = -1
+                    nearest_dist = 1e10
+                    for j in ids:
+                        if path_dist[i][j] < nearest_dist and self.paths[i]['output'] == self.paths[j]['output']:
+                            nearest = j
+                            nearest_dist = path_dist[i][j]
+                    j = nearest
+                    self.paths[i]['father'] = j
+                    self.paths[j]['children'].append(i)
         for i in range(len(self.paths)):
-            if self.paths[i]['level'] >= 1 and self.paths[i]['level'] < max_level:
-                self.paths[i]['children'] = []
-                nearest = rtree.get_nns_by_vector(path_mat[i], 1)[0]
-                name = self.selected_indexes[nearest]
-                path = self.paths[self.path_index[name]]
-                path['children'].append(i)
-        for i, name in enumerate(self.selected_indexes):
-            path = self.paths[self.path_index[name]]
+            self.paths[i]['father'] = i
+        for i in range(len(self.paths)):
+            for j in self.paths[i]['children']:
+                self.paths[j]['father'] = i
     def model_info(self):
         return self.model['model_info']
 
-original_data = pd.read_csv('../model/data/german_detailed.csv')
-data = pd.read_csv('../model/data/german.csv')
-model = pickle.load(open('../model/output/german1211.pkl', 'rb'))
-loader = DataLoader(data, model, 'Creditability')
+if dataset == 'german':
+    original_data = pd.read_csv('../model/data/german_detailed.csv')
+    data = pd.read_csv('../model/data/german.csv')
+    model = pickle.load(open('../model/output/german0117_2.pkl', 'rb'))
+    loader = DataLoader(data, model, 'credit_risk')
+else:
+    original_data = pd.read_csv('../model/data/bank.csv')
+    data = pd.read_csv('../model/data/bank.csv')
+    model = pickle.load(open('../model/output/bankruptcy0117.pkl', 'rb'))
+    loader = DataLoader(data, model, 'Bankrupt?')
+
 
 @app.route('/api/data_table', methods=["POST"])
 def get_data():
     features = [feature for feature in original_data.columns]
-    values = [original_data[feature].values for feature in original_data.columns]
-    shap = [loader.shap_values[i].values for i in range(len(loader.shap_values))]
+    n = 1000
+    values = [original_data[feature].values[:n] for feature in original_data.columns]
+    shap = [loader.shap_values[i].values[:n] for i in range(len(loader.shap_values))]
     response = {
         'features' : features,
         'values': values,
@@ -210,15 +247,14 @@ def get_explore_rules():
             continue
         nns_set.add(i)
         path = loader.paths[i]
-        if path['represent']:
-            last_rep = i
         response.append({
             'name': path['name'],
             'tree_index': path['tree_index'],
             'rule_index': path['rule_index'],
             'represent': path['represent'],
-            'father': last_rep,
+            'father': path['father'],
             'range': path['range'],
+            'level': path['level'],
             'LOF': path['lof'],
             'num_children': len(path['children']),
             'distribution': path['distribution'],
@@ -261,6 +297,7 @@ def get_selected_rules():
             'rule_index': path['rule_index'],
             'represent': path['represent'],
             'range': path['range'],
+            'level': path['level'],
             'num_children': len(path['children']),
             'LOF': path['lof'],
             'distribution': path['distribution'],

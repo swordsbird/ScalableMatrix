@@ -34,9 +34,10 @@ export default {
   }),
   computed: {
     ...mapGetters(['filtered_data']),
-    ...mapState(['highlighted_sample', 'crossfilter', 'data_shaps', 'data_table', 'colorSchema'])
+    ...mapState(['highlighted_sample', 'covered_samples', 'crossfilter', 'data_shaps', 'data_table', 'colorSchema'])
   },
   watch: {
+    covered_samples() { this.renderTable() },
     crossfilter () { this.renderTable() },
     highlighted_sample () { this.renderTable() }
   },

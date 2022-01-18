@@ -44,6 +44,17 @@ export default {
         .style("font-weight", 500)
         .style("fill", "rgba(0,0,0,0.6)")
         .text('Info')
+
+      svg
+        .append("text")
+        .attr("class", 'title')
+        .attr("dx", width / 2 - 50)
+        .attr("dy", 400)
+        .style("font-family", "Arial")
+        .style("font-size", "15px")
+        .style("font-weight", 500)
+        .style("fill", "rgba(0,0,0,0.6)")
+        .text('LEGEND')
     },
     async onResize() {
       await this.renderView();

@@ -9,27 +9,27 @@
     </v-system-bar>
 
     <v-main>
-      <v-container fluid style="height: 100%; position: relative" class="pa-1">
+      <v-container fluid style="height: 100%; position: relative" ref="main_container" class="pa-1">
         <v-row :style="`height: ${showTable ? 80 : 100}%`" dense>
-          <v-col cols="3" class="pa-1">
+          <v-col cols="2" class="pa-1">
             <v-card class="mx-auto" id="feature_view" height="100%">
               <div style="height: 100%">
                 <feature v-if="initilized"/>
               </div>
             </v-card>
           </v-col>
-          <v-col cols="9" class="pa-1">
+          <v-col cols="8" class="pa-1">
             <v-card class="mx-auto" height="100%" style="user-select: none">
               <div
                 :style="`height: 100%; position: relative;`"
                 class="white"
               >
-                <div style="height: calc(100% - 64px); position: relative;">
+                <div style="height: calc(100% - 48px); position: relative;">
                   <matrix ref="matrix" v-if="initilized"/>
                 </div>
                 <div class="d-flex justify-space-between align-end pr-4" v-if="initilized">
                   <div>
-                    <v-btn color="primary" text @click="toggleDatatable">
+                    <v-btn color="primary" text @click="toggleDatatable" v-show="false">
                       <span v-if="showTable">hide data</span>
                       <span v-else>show data</span>
                     </v-btn>
@@ -42,13 +42,13 @@
               </div>
             </v-card>
           </v-col>
-          <!--v-col cols="0" class="pa-1">
+          <v-col cols="2" class="pa-1">
             <v-card class="mx-auto" height="100%">
               <div style="height: 100%; position: relative;">
                 <info :render="initilized"/>
               </div>
             </v-card>
-          </v-col-->
+          </v-col>
         </v-row>
         <v-row :style="`height: 20%`" dense v-show="showTable">
           <v-col class="px-1">
@@ -69,14 +69,14 @@
           </v-col>
         </v-row>
       </v-container>
-      <!-- <div class="svg-tooltip"
+      <div class="svg-tooltip"
       :style="{
-        left: `${Math.min(page_width - tooltipview.width, tooltipview.x + 10)}px`,
+        left: `${Math.min(page.width - tooltipview.width, tooltipview.x + 10)}px`,
         top: `${tooltipview.y - 10}px`,
         'max-width': `${tooltipview.width}px`,
         visibility: tooltipview.visibility
       }">{{ tooltipview.content }}
-      </div> -->
+      </div>
     </v-main>
   </v-app>
 </template>
@@ -101,7 +101,7 @@ export default {
   },
   computed: {
     ...mapGetters(['model_info', 'rule_info']),
-    ...mapState(['tooltipview', 'highlighted_sample', 'data_table', 'crossfilter', 'data_header', 'page_width', 'matrixview'])
+    ...mapState(['tooltipview', 'highlighted_sample', 'data_table', 'crossfilter', 'data_header', 'page', 'matrixview'])
   },
   watch: {
     crossfilter(val) {
@@ -119,6 +119,11 @@ export default {
         this.$refs.matrix?.onResize()
         this.$refs.datatable?.onResize()
       })
+    },
+    onResize(){
+      const width = this.$refs.main_container.getBoundingClientRect().width
+      const height = this.$refs.main_container.getBoundingClientRect().height
+      this.updatePageSize({ width, height })
     },
     renderDataTable() {
       // const width = this.$refs.tableview.parentNode.getBoundingClientRect().width
@@ -159,15 +164,15 @@ export default {
       tab: 'Data Table',
       initilized: false,
 
-      showTable: 1
+      showTable: true
     }
   },
   async mounted() {
     await this.fetchRawdata()
     await this.setReady()
     await this.updateMatrixLayout()
-    // window.addEventListener('resize', this.onResize, { passive: true })
-    // this.onResize()
+    window.addEventListener('resize', this.onResize, { passive: true })
+    this.onResize()
     // this.renderDataTable()
     this.initilized = true
   }

@@ -8,7 +8,7 @@ function HistogramChart() {
   let color = d3.schemeDark2[0];
   let datatype = "category"
   let data = null
-  const maxbins = 40
+  const maxbins = 20
   let valueTicks = null, valueScale
   let on_mousemove = () => {}
   let on_mouseout = () => {}
@@ -46,7 +46,11 @@ function HistogramChart() {
       } else if (datatype == "number") {
         const extent = valueTicks
         valueScale = d3.scaleLinear().domain(extent).nice();
-        valueTicks = valueScale.ticks(maxbins);
+        valueTicks = valueScale.ticks(Math.min(extent[1] + 1, maxbins));
+        /*if (extent[1] < 10) {
+          console.log('domain', extent, 'range', [0, valueTicks.length])
+          console.log(data.map(d => d[xAttr]))
+        }*/
         valueScale.range([0, valueTicks.length]);
       } else {
         const dict = {};
@@ -65,6 +69,8 @@ function HistogramChart() {
       .domain(valueTicks)
       .range([0, width])
       .padding(0.2);
+    
+    let bandwidth = xScale.bandwidth()
 
     const yScale = d3
       .scaleLinear()
@@ -83,7 +89,7 @@ function HistogramChart() {
       .attr("class", "bar")
       .attr("x", (d) => xScale(d.name))
       .attr("y", (d) => height - yScale(d.count))
-      .attr("width", xScale.bandwidth())
+      .attr("width", bandwidth)
       .attr("height", (d) => yScale(d.count))
       .attr("fill", color)
       .attr("opacity", 1)

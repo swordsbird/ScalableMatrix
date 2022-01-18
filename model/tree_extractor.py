@@ -21,7 +21,7 @@ def visit_boosting_tree(tree, path = {}):
         r = leftpath[key]
         leftpath[key] = [r[0], min(r[1], thres)]
     else:
-        leftpath[key] = [-1e9, thres]
+        leftpath[key] = [-1e14, thres]
     ret += visit_boosting_tree(tree['left_child'], leftpath)
 
     rightpath = deepcopy(path)
@@ -29,7 +29,7 @@ def visit_boosting_tree(tree, path = {}):
         r = rightpath[key]
         rightpath[key] = [max(r[0], thres), r[1]]
     else:
-        rightpath[key] = [thres, 1e9]
+        rightpath[key] = [thres, 1e14]
     ret += visit_boosting_tree(tree['right_child'], rightpath)
 
     return ret
@@ -49,7 +49,7 @@ def visit_decision_tree(tree, index = 0, path = {}):
         r = leftpath[key]
         leftpath[key] = [r[0], min(r[1], thres)]
     else:
-        leftpath[key] = [-1e9, thres]
+        leftpath[key] = [-1e14, thres]
     ret += visit_decision_tree(tree, tree.children_left[index], leftpath)
     
     rightpath = deepcopy(path)
@@ -57,7 +57,7 @@ def visit_decision_tree(tree, index = 0, path = {}):
         r = rightpath[key]
         rightpath[key] = [max(r[0], thres), r[1]]
     else:
-        rightpath[key] = [thres, 1e9]
+        rightpath[key] = [thres, 1e14]
     ret += visit_decision_tree(tree, tree.children_right[index], rightpath)
 
     return ret
@@ -77,6 +77,26 @@ def assign_samples(paths, data):
         path['distribution'] = [neg, pos]
         path['output'] = int(np.argmax(path['distribution']))
         path['coverage'] = 1.0 * len(idx) / X.shape[0]
+
+def assign_samples_lgbm(paths, data):
+    X, y = data
+    for path in paths:
+        ans = 2 * y - 1
+        m = path['range']
+        new_range = {}
+        for key in m:
+            if type(key) == int:
+                ans = ans * (X[:, int(key)] >= m[key][0]) * (X[:, int(key)] < m[key][1])
+                new_range[str(key)] = m[key]
+        [idx] = np.nonzero(ans)
+        path['sample'] = (np.abs(ans)).tolist()
+        path['sample_id'] = idx.tolist()
+        pos = (ans == 1).sum()
+        neg = (ans == -1).sum()
+        path['distribution'] = [neg, pos]
+        path['output'] = 0 if path['value'] < 0 else 1
+        path['coverage'] = 1.0 * len(idx) / X.shape[0]
+        path['range'] = new_range
 
 def assign_value_for_random_forest(paths, data):
     X, y = data

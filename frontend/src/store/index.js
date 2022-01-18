@@ -24,13 +24,17 @@ export default new Vuex.Store({
     data_header: [],
     model_info: {},
     colorSchema: [d3.schemeTableau10[1], d3.schemeTableau10[0]].concat(d3.schemeTableau10.slice(2)),
-    page_width: 1800,
+    page: { width: 1800, height: 1000 },
+    covered_samples: [],
     matrixview: {
       maxlen: 22,
+      max_level: -1,
       sort_by_cover_num: false,
       n_lines: 80,
       padding: 10,
       cell_padding: 3,
+      max_columns: 40,
+      last_show_rules: [],
       margin: {
         top: 130,
         right: 180,
@@ -78,7 +82,7 @@ export default new Vuex.Store({
       ],
       row_height: {
         small: 2,
-        medium: 6,
+        medium: 6.3,
         large: 32,
       },
       row_padding: 2,
@@ -164,6 +168,10 @@ export default new Vuex.Store({
         })
       }
     },
+    changePageSize (state, { width, height }) {
+      state.page.width = width
+      state.page.height = height
+    },
     changeMatrixSize (state, { width, height }) {
       state.matrixview.width = width
       state.matrixview.height = height
@@ -204,6 +212,7 @@ export default new Vuex.Store({
       let rules = state.rules
         .filter(d => d.selected)
         .filter(d => state.rulefilter(d))
+        /*
         .filter(d => {
           let count = 0
           for (let id of d.samples) {
@@ -211,10 +220,25 @@ export default new Vuex.Store({
           }
           return count / d.samples.length >= 0.8
         })
+        */
         
-      const n_lines = state.matrixview.zoom_level > 0 ? (state.matrixview.n_lines - 15) : state.matrixview.n_lines
+      // const n_lines = state.matrixview.zoom_level > 0 ? (state.matrixview.n_lines - 15) : state.matrixview.n_lines
 
       let has_primary_key = false
+      const max_level = Math.max(...rules.map(d => d.level))
+      const min_level = Math.min(...rules.map(d => d.level))
+      state.matrixview.zoom_level = max_level
+      console.log('level', max_level, min_level)
+      rules.forEach(d => {
+        if (d.level == min_level) {
+          d.represent = true
+          d.show_hist = (state.matrixview.zoom_level > 0)
+        } else {
+          d.represent = false
+          d.show_hist = false
+        }
+      })
+      //console.log('rules', rules)
       const preserved_keys = new Set(['coverage', 'fidelity', 'LOF'])
       if (state.matrixview.order_keys.length == 0) {
         if (state.matrixview.zoom_level == 0) {
@@ -248,29 +272,30 @@ export default new Vuex.Store({
           let unique_reps = [...new Set(rules.map(d => d.father))]
           let ret = []
           for (let rep of unique_reps) {
+            if (rep == -1) continue
             ret = ret
             .concat(rules.filter(d => d.father == rep && d.represent))
             .concat(rules.filter(d => d.father == rep && !d.represent)
               .sort((a, b) => {
-              for (let index = 0; index < state.matrixview.order_keys.length; ++index) {
-                const key = state.matrixview.order_keys[index].key
-                const order = state.matrixview.order_keys[index].order              
-                if (preserved_keys.has(key)) {
-                  return order * (a[key] - b[key])
-                } else {
-                  if (!a.cond_dict[key] && b.cond_dict[key]) {
-                    return 1
-                  } else if (a.cond_dict[key] && !b.cond_dict[key]) {
-                    return -1
-                  } else if (!a.cond_dict[key] && !b.cond_dict[key]) {
-                    continue
+                for (let index = 0; index < state.matrixview.order_keys.length; ++index) {
+                  const key = state.matrixview.order_keys[index].key
+                  const order = state.matrixview.order_keys[index].order              
+                  if (preserved_keys.has(key)) {
+                    return order * (a[key] - b[key])
                   } else {
-                    return +order * (a.range_key[key] - b.range_key[key])
+                    if (!a.cond_dict[key] && b.cond_dict[key]) {
+                      return 1
+                    } else if (a.cond_dict[key] && !b.cond_dict[key]) {
+                      return -1
+                    } else if (!a.cond_dict[key] && !b.cond_dict[key]) {
+                      continue
+                    } else if (a.range_key[key] != b.range_key[key]) {
+                      return +order * (a.range_key[key] - b.range_key[key])
+                    }
                   }
                 }
-              }
-              return a.predict - b.predict
-            }))
+                return a.predict - b.predict
+              }))
           }
           rules = ret
         }
@@ -286,6 +311,37 @@ export default new Vuex.Store({
         // console.log('rules.length', rules.length)
       }
       */
+      for (let i = 0; i < features.length; ++i) {
+        const feature = features[i]
+        //if (feature.name != 'others') {
+        feature.count = rules.filter(d => {
+          for (let cond of d.conds) {
+            if (cond.key == feature.index) {
+              return 1
+            }
+          }
+          return 0
+        }).length
+        /* } else {
+          feature.count = -1
+        } */
+      }
+      //features = features.filter(d => d.count > 0)
+      // console.log(features)
+      // console.log(rules)
+      let covered_samples = new Set()
+      for (let rule of rules) {
+        for (let id of rule.samples) {
+          if (!covered_samples.has(id)) {
+            covered_samples.add(id)
+          }
+        }
+      }
+      state.covered_samples = [...covered_samples]
+      if (state.matrixview.max_columns < features.length) {
+        features = features.slice(0, state.matrixview.max_columns)
+      }
+
       const samples = new Set([].concat(...rules.map(d => d.samples)))
       state.coverfilter = (d) => samples.has(d._id)
       state.primary.has_primary_key = has_primary_key
@@ -313,12 +369,11 @@ export default new Vuex.Store({
       const oldCoverageScale = d3.scaleLinear()
         .domain(coverage_range)
         .range(rule_base)
-      const showHistogram = (d) => state.matrixview.zoom_level > 0 && d.represent
       //const rule_sum = rules.map(d => oldCoverageScale(d.coverage) * representScale(d.represent)).reduce((a, b) => a + b)
       //const height_ratio = rule_height / rule_sum
       //const rule_range = [rule_base[0] * height_ratio, rule_base[1] * height_ratio]
       //const instance_height = (rule_range[0] + rule_range[1]) / 2
-      const instance_height = state.matrixview.row_height.medium
+      const instance_height = height / state.matrixview.n_lines - state.matrixview.row_padding//state.matrixview.row_height.medium
       // const ruleScale = d3.scaleLinear().domain(coverage_range).range(rule_range)
         
       const coverageScale = d3.scaleLinear()
@@ -329,7 +384,7 @@ export default new Vuex.Store({
         .domain([0, 1])
         .range([0, state.matrixview.coverage_width])
         
-      const lofScale = d3.scaleLinear()
+      const lofScale = d3.scalePow(2)
         .domain([Math.min(...rules.map(d => d.LOF)), Math.max(...rules.map(d => d.LOF))])
         .range([0.1 * state.matrixview.coverage_width, state.matrixview.coverage_width])
 
@@ -339,11 +394,14 @@ export default new Vuex.Store({
         
       const rows = []
       let y = state.matrixview.row_padding
+      if (rules.length * state.matrixview.row_height.large < height) {
+        rules.forEach(d => d.show_hist = 1)
+      }
       for (let i = 0, lastheight = 0; i < rules.length; ++i) {
         const rule = rules[i]
         const glyphheight = instance_height
-        let height = state.matrixview.row_height.medium
-        if (showHistogram(rule)) {
+        let height = instance_height//state.matrixview.row_height.medium
+        if (rule.show_hist) {
           height = state.matrixview.row_height.large
         }
         const x = 0//state.matrixview.glyph_padding//state.matrixview.padding + state.matrixview.coverage_width
@@ -356,30 +414,34 @@ export default new Vuex.Store({
           LOF: lofScale(rule.LOF)
         }
         const attrfill = { coverage: 'gray', fidelity: colorSchema[rule.predict], LOF: 'gray'} //'#7ec636' }
-        rows.push({ x, y, lastheight, width: _width, height, glyphheight, rule, fill: colorSchema[rule.predict], attrwidth, attrfill, samples: new Set(rule.samples) })
+        rows.push({
+          x, y, lastheight,
+          width: _width, height, glyphheight,
+          rule, fill: colorSchema[rule.predict],
+          attrwidth, attrfill,
+          samples: new Set(rule.samples)
+        })
         lastheight = height
         y += height + state.matrixview.row_padding
       }
 
-      for (let i = 0; i < features.length; ++i) {
-        const feature = features[i]
-        //if (feature.name != 'others') {
-        feature.count = rows.filter(d => {
-          for (let cond of d.rule.conds) {
-            if (cond.key == feature.index) {
-              return 1
-            }
-          }
-          return 0
-        }).length
-        /* } else {
-          feature.count = -1
-        } */
-      }
       if (state.matrixview.sort_by_cover_num) {
+        features = features.sort((a, b) => b.importance - a.importance)
+        features.forEach((d, i) => d.last_rank = i)
         features = features.sort((a, b) => b.count - a.count)
+        features.forEach((d, i) => d.current_rank = i)
+        features.forEach(d => {
+          if (d.current_rank + 3 < d.last_rank) {
+            d.hint_change = 1
+          } else {
+            d.hint_change = 0
+          }
+        })
       } else {
         features = features.sort((a, b) => b.importance - a.importance)
+        features.forEach(d => {
+          d.hint_change = 0
+        })
       }
 
       const cols = []
@@ -391,7 +453,12 @@ export default new Vuex.Store({
         const width = featureScale(feature.importance)
           + (show_axis ? (state.matrixview.focused_feature.extend_width) : 0)
         //if (feature.name != 'others') {
-        const scale = d3.scaleLinear().domain(feature.range).range([feature_padding, width - feature_padding])
+        const range = feature.dtype == "categoric" ? 
+          [0, feature.values.length] : 
+          [0, feature.range[1]]
+        const scale = d3.scaleLinear()
+          .domain(range)
+          .range([feature_padding, width - feature_padding])
         const item = {
           x: x, y: 0, width, height: height,
           index: feature.index,
@@ -399,7 +466,9 @@ export default new Vuex.Store({
           name: feature.name,
           type: feature.dtype,
           count: feature.count,
-          range: feature.range,
+          hint_change: feature.hint_change,
+          delta: feature.hint_change ? (feature.last_rank - feature.current_rank) : 0,
+          range,
           values: feature.values,
           scale,
           show_axis
@@ -458,7 +527,7 @@ export default new Vuex.Store({
                   x0: feature.scale(j),
                   x1: feature.scale(j + 1),
                   h: row.height,
-                  represent: row.rule.represent,
+                  show_hist: row.rule.show_hist,
                   fill: row.fill,
                   neg: !cond1 && neg
                 })
@@ -468,7 +537,7 @@ export default new Vuex.Store({
               x0: feature.scale(Math.max(feature.range[0], d.range[0])),
               x1: feature.scale(Math.min(feature.range[1], d.range[1])),
               h: row.height,
-              represent: row.rule.represent,
+              show_hist: row.rule.show_hist,
               fill: row.fill
             })
           }
@@ -484,7 +553,8 @@ export default new Vuex.Store({
             name: feature.name,
             feature: feature,
             represent: row.rule.represent,
-            samples: row.rule.represent ? [...row.samples] : []
+            show_hist: row.rule.show_hist,
+            samples: row.rule.show_hist ? [...row.samples] : []
           }
         })
         row.attr = { num: row.attrwidth.num, num_children: row.attrwidth.num_children }
@@ -501,32 +571,11 @@ export default new Vuex.Store({
         }))
       })
 
-      const instances = []
-      for (let instance of state.instances) {
-        const radius = instance_height * 0.4
-        instances.push({
-          id: instance.id,
-          dims: instance.x.map((t, i) => ({
-            x: 
-              Math.min(
-                indexed_cols[i].scale.range()[1] - radius,
-                Math.max(indexed_cols[i].scale.range()[0] + radius,
-                indexed_cols[i].scale(t))
-              ),
-            y: instance_height / 2,
-            r: radius,
-            shap: instance.shap_values[i],
-            fill: colorSchema[instance.y],
-          })),
-          fill: colorSchema[instance.y],
-          x: state.matrixview.padding + state.matrixview.coverage_width,
-          y,
-        })
-        y += instance_height
-      }
-      state.layout = { cols, rows, instances,
+      // console.log('current zoom level', state.matrixview.zoom_level)
+      state.layout = {
+        cols, rows,
         height : y,
-        width : width
+        width : width,
       }
     },
     /*
@@ -550,7 +599,6 @@ export default new Vuex.Store({
     // representative rules need to be highlighted, 柠檬黄, stroke, extend in the front
     // interaction design
     setRulePaths(state, paths) {
-      console.log(paths)
       const raw_rules = paths.map((rule) => ({
         distribution: rule.distribution,
         id: rule.name,
@@ -558,8 +606,8 @@ export default new Vuex.Store({
         rule_index: rule.rule_index,
         coverage: rule.coverage,
         LOF: rule.LOF,
+        level: rule.level,
         loyalty: (rule.coverage ** 0.5) *  rule.LOF,
-        represent: rule.represent,
         father: rule.father,
         fidelity: rule.distribution[+rule.output] / rule.samples.length,
         cond_dict: rule.range,
@@ -572,7 +620,11 @@ export default new Vuex.Store({
           range: rule.range[cond_key],
         }))
       }))//.filter(d => d.fidelity > 0.6)
+      if (state.matrixview.max_level == -1) {
+        state.matrixview.max_level = Math.max(...raw_rules.map(d => d.level))
+      }
       for (let rule of raw_rules) {
+        rule.level = state.matrixview.max_level - rule.level
         rule.range_key = {}
         for (let key of Object.keys(rule.range)) {
           const range = rule.range[key]
@@ -595,7 +647,7 @@ export default new Vuex.Store({
       state.matrixview.zoom_level = status
     },
     setFeatures(state, features) {
-      console.log(features[0])
+      //console.log(features[0])
       const raw_features = features.map(
         (feature, feature_index) => ({
           index: feature_index,
@@ -618,9 +670,12 @@ export default new Vuex.Store({
   getters: {
     //model_info: 'Dataset: German credit, Model: Random Forest, Original Accuracy: 82.83%, Fedility: 95.20%',
     model_info: (state) => `Dataset: ${state.model_info.dataset}, Model: ${state.model_info.model}, Original Accuracy: ${Number(state.model_info.accuracy * 100).toFixed(2)}%, Fedility: ${Number(state.model_info.info[1].fidelity_test * 100).toFixed(2)}%`,
-    rule_info: (state) => `${state.matrixview.zoom_level > 0 ? 'Zoomed view' : 'Overview'}: ${state.layout.rows.length} of ${state.model_info.num_of_rules} rules`,
+    rule_info: (state) => `${state.matrixview.zoom_level > 0 ? ('Zoom level ' + state.matrixview.zoom_level) : 'Overview'}: ${state.layout.rows.length} of ${state.model_info.num_of_rules} rules`,
     topview_height: (state) => state.matrixview.height,
-    filtered_data: (state) => state.data_table.filter(d => state.crossfilter(d))
+    filtered_data: (state) => {
+      let covered_samples = new Set(state.covered_samples)
+      return state.data_table.filter(d => state.crossfilter(d) && covered_samples.has(d._id))
+    }
   },
   actions: {
     /*
@@ -633,17 +688,20 @@ export default new Vuex.Store({
       commit('setAllRules', resp.data.rules)
     },
     */
-    async showExploreRules({ commit, state }, data) {
-      let resp = await axios.post(`${state.server_url}/api/explore_rules`, { idxs: data, N: ~~(state.matrixview.n_lines ) })
+    async showRules({ commit, state }, data) {
+      let resp
+      if (data == null && state.matrixview.last_show_rules.length > 1) {
+        data = state.matrixview.last_show_rules.splice(-2, 1)[0]
+      } else if (data != null) {
+        state.matrixview.last_show_rules.push(data)
+      }
+      if (data == null) {
+        state.matrixview.last_show_rules = []
+        resp = await axios.get(`${state.server_url}/api/selected_rules`, {})
+      } else {
+        resp = await axios.post(`${state.server_url}/api/explore_rules`, { idxs: data, N: ~~(state.matrixview.n_lines ) })
+      }
       commit('setRulePaths', resp.data)
-      commit('setZoomStatus', true)
-      commit('updateMatrixLayout')
-    },
-    async showRepresentRules({ commit, state }) {
-      const resp = await axios.get(`${state.server_url}/api/selected_rules`, {})
-      commit('setRulePaths', resp.data)
-      commit('setInstances', [])
-      commit('setZoomStatus', false)
       commit('updateMatrixLayout')
     },
     async orderRow({ commit }, data) {
@@ -680,6 +738,9 @@ export default new Vuex.Store({
     async updateMatrixSize({ commit }, { width, height }) {
       commit('changeMatrixSize', { width, height })
       commit('updateMatrixLayout')
+    },
+    async updatePageSize({ commit }, { width, height }) {
+      commit('changePageSize', { width, height })
     },
     async updateRulefilter({ commit, state }, filter) {
       commit('changeRulefilter', filter)
