@@ -27,8 +27,8 @@ app = Flask(__name__,
             template_folder = "./dist")
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-dataset = 'german'
-#dataset = 'bankruptcy'
+#dataset = 'german'
+dataset = 'bankruptcy'
 
 if dataset == 'german':
     reassign = {
@@ -48,12 +48,11 @@ if dataset == 'german':
             "radio/television",
             "domestic appliances",
             "repairs",
-            "education", 
             "vacation",
             "retraining",
             "business"
         ],
-        'installment_rate': [">= 35", "25 <= ... < 35", "20 <= ... < 25",  "< 20"],
+        'installment_rate': ["< 20", "20 <= ... < 25",  "25 <= ... < 35", ">= 35"],
         'present_residence': [
             "< 1 yr", 
             "1 <= ... < 4 yrs",
@@ -61,7 +60,7 @@ if dataset == 'german':
             ">= 7 yrs"
         ],
         'number_credits': ["1", "2-3", "4-5", ">= 6"],
-        'people_liable': ["3 or more", "0 to 2"],
+        'people_liable': ["0 to 2", "3 or more"],
         'savings': [
             "unknown/no savings account",
             "... <  100 DM", 
@@ -77,8 +76,8 @@ if dataset == 'german':
             ">= 7 yrs"
         ],
         'personal_status_sex': [
-            "married male",
             "not married male",
+            "married male",
         ],
         'other_debtors': [
             'none',
@@ -86,13 +85,13 @@ if dataset == 'german':
             'guarantor'
         ],
         'property': [
-            "unknown / no property",
-            "car or other",
+            "real estate",
             "building soc. savings agr./life insurance", 
-            "real estate"
+            "car or other",
+            "unknown / no property",
         ],
         'other_installment_plans': ['bank', 'stores', 'none'],
-        'housing': ["for free", "rent", "own"],
+        'housing': ["rent", "own", "for free"],
         'job': [
             'unemployed/ unskilled - non-resident',
             'unskilled - resident',
@@ -106,7 +105,7 @@ if dataset == 'german':
             "... >= 200 DM / salary for at least 1 year",
         ],
         'telephone': ['No', 'Yes'],
-        'foreign_worker': ['Yes', 'No'],
+        'foreign_worker': ['No', 'Yes'],
     }
 else:
     reassign = {}
@@ -150,11 +149,11 @@ class DataLoader():
         path_lof = -clf.negative_outlier_factor_
         print('rule LOF', min(path_lof), max(path_lof))
 
-        clf2 = LocalOutlierFactor(n_neighbors=K, metric="precomputed")
-        path_dist2 = pairwise_distances(X = path_mat.transpose(), metric='jaccard')
-        clf2.fit(path_dist2)
-        path_lof2 = -clf2.negative_outlier_factor_
-        print('sample LOF', min(path_lof2), max(path_lof2))
+        #clf2 = LocalOutlierFactor(n_neighbors=K, metric="precomputed")
+        #path_dist2 = pairwise_distances(X = path_mat.transpose(), metric='jaccard')
+        #clf2.fit(path_dist2)
+        #path_lof2 = -clf2.negative_outlier_factor_
+        #print('sample LOF', min(path_lof2), max(path_lof2))
 
         for i in range(len(self.paths)):
             self.paths[i]['lof'] = float(path_lof[i])
@@ -189,7 +188,7 @@ class DataLoader():
 if dataset == 'german':
     original_data = pd.read_csv('../model/data/german_detailed.csv')
     data = pd.read_csv('../model/data/german.csv')
-    model = pickle.load(open('../model/output/german0117_2.pkl', 'rb'))
+    model = pickle.load(open('../model/output/german0120v2.pkl', 'rb'))
     loader = DataLoader(data, model, 'credit_risk')
 else:
     original_data = pd.read_csv('../model/data/bank.csv')

@@ -371,7 +371,7 @@ export default {
           .attr('transform', `translate(${header_offset.x*1.5},${-header_offset.y-header_offset.x})`)
         
         hint_glyph.append('text')
-          .attr('dx', 4)
+          .attr('dx', 10)
           .attr('dy', -2)
           .attr('font-size', '14px')
           .attr('font-family', 'Arial')

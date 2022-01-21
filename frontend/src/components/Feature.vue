@@ -6,7 +6,7 @@
 
 <script>
 // import * as vl from "vega-lite-api"
-import { mapActions, mapState } from "vuex";
+import { mapActions, mapGetters, mapState } from "vuex";
 import * as d3 from "d3";
 import BrushableBarchart from "../libs/brushablechart";
 
@@ -20,7 +20,21 @@ export default {
     render: Boolean
   },
   computed: {
-    ...mapState(["data_table", "data_header", "featureview", "rules"]),
+    ...mapState(["covered_samples", "data_table", "data_header", "featureview", "rules"]),
+    ...mapGetters(['rule_related_data'])
+  },
+  data() {
+    return {
+      model_feature_view: null,
+      data_feature_view: null,
+      model_features: null,
+      data_features: null,
+    }
+  },
+  watch: {
+    covered_samples(val) {
+      this.update()
+    }
   },
   methods: {
     ...mapActions(['tooltip', 'updateCrossfilter', 'updateRulefilter']),
@@ -48,11 +62,11 @@ export default {
       svg.attr("height", height)
         .attr("width", width)
 
-      const model_feature_view = svg.append('g')
+      let model_feature_view = svg.append('g')
         .attr('class', 'model-feature')
         .attr('transform', `translate(${0},${0})`)
 
-      const data_feature_view = svg.append('g')
+      let data_feature_view = svg.append('g')
         .attr('class', 'data-feature')
         .attr('transform', `translate(${0},${model_feature_height})`)
 
@@ -77,20 +91,56 @@ export default {
         .style("font-weight", 500)
         .style("fill", "rgba(0,0,0,0.6)")
         .text('Data Features')
-      
 
-      drawCharts(model_feature_view, this.rules, model_features, (filter) => this.updateRulefilter(filter), false)
-      drawCharts(data_feature_view, this.data_table, data_features, (filter) => this.updateCrossfilter(filter))
+      model_feature_view = model_feature_view.append('g')
+        .attr('class', 'content')
+
+      data_feature_view = data_feature_view.append('g')
+        .attr('class', 'content')
+
+      this.model_feature_view = model_feature_view
+      this.data_feature_view = data_feature_view
+      this.model_features = model_features
+      this.data_features = data_features
+      this.update()
+    },
+    update() {
+      console.log('update with', this.covered_samples, this.rule_related_data)
+      const self = this
+      const featureview = this.featureview
+      const width = this.$refs.feature_parent
+        .parentNode
+        .getBoundingClientRect()
+        .width
+
+      drawCharts(
+        this.model_feature_view,
+        this.rules,
+        this.model_features,
+        (filter) => this.updateRulefilter(filter), false
+      )
+      drawCharts(
+        this.data_feature_view,
+        this.rule_related_data,
+        this.data_features, 
+        (filter) => this.updateCrossfilter(filter)
+      )
 
       function drawCharts(selection, data, features, update, brushable = true) {
-        const chart_row = selection
+        selection.selectAll('*').remove()
+
+        selection
           .selectAll(".chart")
           .data(features)
           .enter()
           .append("g")
           .attr("class", "chart")
-          .attr("transform", (d, i) => `translate(${featureview.padding}, ${(i + 0.5) * featureview.column_height})`);
         
+        let chart_row = selection
+          .selectAll(".chart")
+          .data(features)
+          .attr("transform", (d, i) => `translate(${featureview.padding}, ${(i + 0.5) * featureview.column_height})`);
+
         chart_row
           .append("text")
           .attr("class", "name")

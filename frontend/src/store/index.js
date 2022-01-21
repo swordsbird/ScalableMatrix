@@ -228,7 +228,7 @@ export default new Vuex.Store({
       const max_level = Math.max(...rules.map(d => d.level))
       const min_level = Math.min(...rules.map(d => d.level))
       state.matrixview.zoom_level = max_level
-      console.log('level', max_level, min_level)
+      // console.log('level', max_level, min_level)
       rules.forEach(d => {
         if (d.level == min_level) {
           d.represent = true
@@ -239,6 +239,7 @@ export default new Vuex.Store({
         }
       })
       //console.log('rules', rules)
+      //console.log()
       const preserved_keys = new Set(['coverage', 'fidelity', 'LOF'])
       if (state.matrixview.order_keys.length == 0) {
         if (state.matrixview.zoom_level == 0) {
@@ -326,7 +327,7 @@ export default new Vuex.Store({
           feature.count = -1
         } */
       }
-      //features = features.filter(d => d.count > 0)
+      features = features.filter(d => d.count > 0)
       // console.log(features)
       // console.log(rules)
       let covered_samples = new Set()
@@ -675,7 +676,11 @@ export default new Vuex.Store({
     filtered_data: (state) => {
       let covered_samples = new Set(state.covered_samples)
       return state.data_table.filter(d => state.crossfilter(d) && covered_samples.has(d._id))
-    }
+    },
+    rule_related_data: (state) => {
+      let covered_samples = new Set(state.covered_samples)
+      return state.data_table.filter(d => covered_samples.has(d._id))
+    },
   },
   actions: {
     /*
@@ -744,11 +749,11 @@ export default new Vuex.Store({
     },
     async updateRulefilter({ commit, state }, filter) {
       commit('changeRulefilter', filter)
-      commit('updateMatrixLayout')
+      // commit('updateMatrixLayout')
     },
     async updateCrossfilter({ commit, state }, filter) {
       commit('changeCrossfilter', filter)
-      commit('updateMatrixLayout')
+      // commit('updateMatrixLayout')
     },
     highlightSample({ commit }, sample_id) {
       commit('highlight_sample', sample_id)
