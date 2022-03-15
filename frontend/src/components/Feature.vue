@@ -1,6 +1,18 @@
 <template>
   <div class="feature-container" :style="`position: absolute; ${positioning}; overflow-y: scroll`" v-resize="onResize">
-    <svg ref="feature_parent" style="width: 100%"></svg>
+    <div class="align-center tree-subtitle ma-2 ml-3 mt-3">
+      Model Info
+    </div>
+    <div class="tree-text ma-3">
+      
+    <p class="ml-1"> <span style="font-weight: 400">Model: </span> {{ model_info.model }} </p>
+    <p class="ml-1"> <span style="font-weight: 400">Dataset: </span> {{ model_info.dataset }} </p>
+    <p class="ml-1"> <span style="font-weight: 400">Accuracy: </span> {{ Number(model_info.accuracy * 100).toFixed(2) }}% </p>
+    <p class="ml-1"> <span style="font-weight: 400">Fidelity: </span> {{ Number(model_info.info[1].fidelity_test * 100).toFixed(2) }}% </p>
+    <p class="ml-1"> <span style="font-weight: 400">Num of rules: </span> {{ model_info.num_of_rules }} </p>
+    </div>
+    <hr/>
+    <svg ref="feature_parent" style="width: 100%" class="my-2"></svg>
   </div>
 </template>
 
@@ -20,15 +32,16 @@ export default {
     render: Boolean
   },
   computed: {
-    ...mapState(["covered_samples", "data_table", "data_header", "featureview", "rules"]),
-    ...mapGetters(['rule_related_data'])
+    ...mapState(["model_info", "color_schema", 'dataset', 'dataset_candidates', "covered_samples", "data_features", "data_table", "data_header", "featureview", "rules"]),
+    ...mapGetters(['rule_related_data', 'zoom_level', 'model_target'])
   },
   data() {
     return {
       model_feature_view: null,
       data_feature_view: null,
       model_features: null,
-      data_features: null,
+      data_cols: null,
+      current_dataset: 'bankruptcy',
     }
   },
   watch: {
@@ -45,16 +58,19 @@ export default {
         .width
       const self = this
       const featureview = this.featureview
-      const data_features = Object.keys(this.data_table[0])
-        .filter(d => d != 'id' && d != '_id')
-        .map(d => ({ name: d, key: d, filter: () => 1 }))
-      const model_features = [
+      const data_cols = this.data_features
+      /*Object.keys(this.data_table[0])
+        .filter(d => d != 'id' && d != '_id')*/
+        .map(d => ({ name: d.name, key: d.name, feature: d, filter: () => 1 }))
+      const model_features = []
+      /*
         { name: 'Confidence', key: 'fidelity', filter: () => 1 },
         { name: 'Coverage', key: 'coverage', filter: () => 1 },
         { name: 'Anomaly Score', key: 'LOF', filter: () => 1 },
       ]
-      let model_feature_height = (model_features.length + 1) * featureview.column_height
-      let data_feature_height = (data_features.length + 1) * featureview.column_height
+      */
+      let model_feature_height = 0//(model_features.length + 1) * featureview.column_height
+      let data_feature_height = (data_cols.length + 1) * featureview.column_height
       
       const svg = d3.select(this.$refs.feature_parent)
       svg.selectAll("*").remove()
@@ -65,6 +81,7 @@ export default {
       let model_feature_view = svg.append('g')
         .attr('class', 'model-feature')
         .attr('transform', `translate(${0},${0})`)
+        .attr('display', 'none')
 
       let data_feature_view = svg.append('g')
         .attr('class', 'data-feature')
@@ -72,24 +89,16 @@ export default {
 
       model_feature_view
         .append("text")
-        .attr("class", 'title')
+        .attr("class", 'tree-subtitle')
         .attr("dx", 10)
         .attr("dy", 30)
-        .style("font-family", "Arial")
-        .style("font-size", "15px")
-        .style("font-weight", 500)
-        .style("fill", "rgba(0,0,0,0.6)")
         .text('Model Features')
       
       data_feature_view
         .append("text")
-        .attr("class", 'title')
+        .attr("class", 'tree-subtitle')
         .attr("dx", 10)
-        .attr("dy", 30)
-        .style("font-family", "Arial")
-        .style("font-size", "15px")
-        .style("font-weight", 500)
-        .style("fill", "rgba(0,0,0,0.6)")
+        .attr("dy", 20)
         .text('Data Features')
 
       model_feature_view = model_feature_view.append('g')
@@ -101,17 +110,23 @@ export default {
       this.model_feature_view = model_feature_view
       this.data_feature_view = data_feature_view
       this.model_features = model_features
-      this.data_features = data_features
+      this.data_cols = data_cols
       this.update()
     },
     update() {
-      console.log('update with', this.covered_samples, this.rule_related_data)
+      // console.log('update with', this.covered_samples, this.rule_related_data)
       const self = this
       const featureview = this.featureview
       const width = this.$refs.feature_parent
         .parentNode
         .getBoundingClientRect()
         .width
+
+      let current_color = 'white'
+      if (this.zoom_level) {
+        current_color = this.color_schema[this.rules[0].predict]
+      }
+      const model_target = this.model_target
 
       drawCharts(
         this.model_feature_view,
@@ -121,8 +136,10 @@ export default {
       )
       drawCharts(
         this.data_feature_view,
-        this.rule_related_data,
-        this.data_features, 
+        this.zoom_level ? {
+          first: this.data_table, second: this.rule_related_data
+        } : this.data_table,//this.rule_related_data,
+        this.data_cols, 
         (filter) => this.updateCrossfilter(filter)
       )
 
@@ -172,21 +189,35 @@ export default {
           .attr("transform", `translate(${featureview.textwidth}, 0)`);
         
         chart_body.each(function(d) {
+          // console.log(d.name, d.feature.values)
           const chart = BrushableBarchart()
             .data(data)
             .x(d.key)
-            .width(width - featureview.padding * 4 - featureview.textwidth)
+            .valueTicks(d.feature.values)
+            .datatype(d.feature.dtype)
+            .width(width - featureview.padding * 4 - featureview.textwidth - featureview.scrollbar_width)
             .height(featureview.chart_height)
+            .target(model_target)
             .brushable(brushable)
             .colors({
               handle: featureview.handle_color,
               glyph: featureview.glyph_color,
-              bar: featureview.bar_color 
+              bar: featureview.bar_color,
+              highlight: featureview.highlight_color,
+              //d3.color(current_color).darker(-0.5)
             })
-            .mousemove(function(ev, d) {
-              self.tooltip({ type: "show" })
-              self.tooltip({ type: "text", data: `${d.name}, ${d.count}`})
-              self.tooltip({ type: "position", data: { x: ev.pageX, y: ev.pageY }})
+            .mousemove({
+              first: function(ev, d){
+                self.tooltip({ type: "show" })
+                self.tooltip({ type: "text", data: `${d.name}: <br/> ${d.count} instances, <br/> ${Object.keys(d.target).map(k => d.target[k] + ' ' + k).join(', ')}`})
+                self.tooltip({ type: "position", data: { x: ev.pageX, y: ev.pageY }})
+              },
+              second: function(ev, d){
+                if (data instanceof Array) return
+                self.tooltip({ type: "show" })
+                self.tooltip({ type: "text", data: `${d.name}: <br/> ${d.count2} instances, <br/> ${Object.keys(d.target2).map(k => d.target2[k] + ' ' + k).join(', ')}`})
+                self.tooltip({ type: "position", data: { x: ev.pageX, y: ev.pageY }})
+              },
             })
             .mouseout(function(ev, d){
               self.tooltip({ type: "hide" })

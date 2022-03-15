@@ -28,6 +28,8 @@
       </g>
       <g class="header_container" 
         :transform="`translate(${matrixview.margin.left - matrixview.glyph_width},${matrixview.margin.top})`">
+        <g class="header_text">
+        </g>
       </g>
       <g class="status_container" 
         :transform="`translate(${matrixview.margin.left}, ${matrixview.height - matrixview.margin.bottom})`">
@@ -42,6 +44,7 @@ import { mapActions, mapGetters, mapState } from 'vuex'
 import * as d3 from 'd3'
 import HistogramChart from "../libs/histogramchart";
 import Scrollbar from "../libs/scrollbar";
+import * as axios from 'axios'
 
 export default {
   name: 'Matrix',
@@ -59,8 +62,8 @@ export default {
     }
   },
   computed: {
-    ...mapState([ 'highlighted_sample', 'data_table', 'data_features', 'matrixview', 'featureview', 'layout', 'primary' ]),
-    ...mapGetters([ 'model_info', 'rule_info' ]),
+    ...mapState([ 'server_url', 'dataset', 'highlighted_sample', 'data_table', 'data_features', 'matrixview', 'featureview', 'layout', 'primary' ]),
+    ...mapGetters([ 'model_info', 'rule_info', 'view_info' ]),
   },
   watch: {
     layout(val) {
@@ -131,14 +134,9 @@ export default {
       
       fixed_element
         .append("text")
-        .attr("class", 'title')
+        .attr("class", 'tree-subtitle')
         .attr("dx", 10)
-        .attr("dy", 30)
-        .style("font-family", "Arial")
-        .style("font-size", "15px")
-        .style("font-weight", 500)
-        .style("fill", "rgba(0,0,0,0.6)")
-        .style("color", "rgba(0,0,0,0.6)")
+        .attr("dy", 28)
         .text('Rules')
 
       const view_height = this.matrixview.height - this.matrixview.margin.bottom - this.matrixview.margin.top
@@ -214,8 +212,8 @@ export default {
 
         count_btn.append('rect')
           .attr('class', 'background')
-          .attr('y', 0)
-          .attr('x', -20)
+          .attr('y', -1)
+          .attr('x', -15)
           .attr('width', 98)
           .attr('height', 20)
           .attr('stroke', 'lightgray')
@@ -226,41 +224,36 @@ export default {
         status_container.append('rect')
           .attr('class', 'background')
           .attr('y', 4)
-          .attr('x', 35)
-          .attr('width', layout.width - self.matrixview.margin.left - 15)
+          .attr('x', 40)
+          .attr('width', layout.width - 110)
           .attr('height', 20)
-          .attr('stroke', 'lightgray')
+          .attr('stroke', matrixview.cell.stroke_color)
+          .attr('stroke-width', matrixview.cell.stroke_width)
           .attr('fill', 'none')
 
         count_btn.append('path')
           .attr('d', "M41 288h238c21.4 0 32.1 25.9 17 41L177 448c-9.4 9.4-24.6 9.4-33.9 0L24 329c-15.1-15.1-4.4-41 17-41zm255-105L177 64c-9.4-9.4-24.6-9.4-33.9 0L24 183c-15.1 15.1-4.4 41 17 41h238c21.4 0 32.1-25.9 17-41z")
-          .attr('transform', "translate(74.5, 4) scale(0.04) rotate(90)")
+          .attr('transform', "translate(84.5, 3) scale(0.04) rotate(90)")
           .attr("opacity", matrixview.sort_by_cover_num ? .8 : .2)
         
         count_btn.append('text')
-          .attr('dx', -15)
-          .attr('dy', 14)
-          .attr('font-size', '14px')
+          .attr('dx', -11)
+          .attr('dy', 13)
+          .attr('font-size', `${self.matrixview.font_size}px`)
           .attr('font-family', 'Arial')
           .text('cover num')
 
-        // const status_text = status_container.append('g')
-        //   .attr('class', 'status')
-        //   .attr('transform', 'translate(0, 70)')
-        //   .style('user-select', 'none')
-
+        /*
+        const status_text = status_container.append('g')
+          .attr('class', 'status')
+          .attr('transform', 'translate(0, 70)')
+          .style('user-select', 'none')
+        */
         // status_text.append('text')
         //   .attr('dx', layout.width + self.matrixview.margin.right - self.model_info.length * 8 + 30)
         //   .attr('font-size', '16px')
         //   .attr('font-family', 'Arial')
         //   .text(self.model_info)
-
-        // status_text.append('text')
-        //   .attr('dx', layout.width + self.matrixview.margin.right - self.rule_info.length * 8)
-        //   .attr('font-size', '16px')
-        //   .attr('font-family', 'Arial')
-        //   .attr('dy', 16)
-        //   .text(self.rule_info)
 
         const status_orders = status_container.select('g.order')
           .data(self.matrixview.order_keys).enter()
@@ -301,7 +294,17 @@ export default {
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended)
-        
+
+        /*
+        const topleft_text = header_container.select('.header_text')
+        topleft_text.append('text')
+          .attr('dx', -5)
+          .attr('font-size', '16px')
+          .attr('font-family', 'Arial')
+          .attr('dy', -60)
+          .style('text-anchor', 'start')
+          .text(self.view_info)
+        */
         let col = header_container.selectAll('g.col')
           .data(cols_data, d => d.index)
 
@@ -313,6 +316,7 @@ export default {
 
         col = header_container.selectAll('g.col')
           .data(cols_data, d => d.index)
+          .style("display", d => d.show ? "block" : "none")
           //.call(drag)
 
         col_join.append('path').attr('class', 'header')
@@ -327,6 +331,8 @@ export default {
         
         function headerInteraction(x) {
           x.on('mouseover', function(){
+            d3.select(this)
+              .raise()
             d3.select(this)
               .select('rect.background')
               .attr('stroke', matrixview.cell.highlight_stroke_color)
@@ -373,14 +379,14 @@ export default {
         hint_glyph.append('text')
           .attr('dx', 10)
           .attr('dy', -2)
-          .attr('font-size', '14px')
+          .attr('font-size', `${self.matrixview.font_size}px`)
           .attr('font-family', 'Arial')
           .attr('fill', 'green')
           .text(d => `▲ +${d.delta}`)
 
         col.selectAll('.category').remove()
 
-        col.filter(d => d.show_axis && d.type == 'categoric')
+        col.filter(d => d.show_axis && d.type == 'category')
           .each(function(d){
             const width = d.width / d.values.length
             const offset_x = header_offset.x - 20
@@ -408,7 +414,7 @@ export default {
             category
               .append('text')
               .attr('transform', `rotate(-35)`)
-              .attr('font-size', '12px')
+              .attr('font-size', `${self.matrixview.font_size - 2}px`)
               .attr('font-family', 'Arial')
               .attr('dx', dy + 28 + (matrixview.maxlen - len) / 2 * 3)
               .attr('dy', dy)// header_offset.y)
@@ -420,12 +426,12 @@ export default {
         
         col.select('text.label')
           .attr('transform', d => d.show_axis ? '' : `rotate(-35)`)
-          .attr('font-size', '14px')
+          .attr('font-size', `${self.matrixview.font_size}px`)
           .attr('font-family', 'Arial')
           .attr('dx', d => {
             if (!d.show_axis) {
               return 30
-            } else if (d.type == 'categoric') {
+            } else if (d.type == 'category') {
               return 40 + header_offset.x
             } else {
               return 40
@@ -434,7 +440,7 @@ export default {
           .attr('dy', d => {
             if (!d.show_axis) {
               return 18 - header_offset.y
-            } else if (d.type == 'categoric') {
+            } else if (d.type == 'category') {
               return -header_offset.x + 3
             } else {
               return -header_offset.y - 13
@@ -456,7 +462,7 @@ export default {
         col.select('rect.background')
           .attr('stroke', matrixview.cell.stroke_color)
           .attr('stroke-width', matrixview.cell.stroke_width)
-          .attr('height', d => d.height)
+          .attr('height', d => d.height + 4)
           .attr('fill', 'none')
 
         col.select('rect.background')
@@ -464,16 +470,16 @@ export default {
           .attr('width', d => d.width)
 
         col.select('text.count')
-          .attr('font-size', '14px')
+          .attr('font-size', `${self.matrixview.font_size}px`)
           .attr('font-family', 'Arial')
           .attr('dx', d => 5)
           .attr('dy', d => d.height + 20)
           .text(d => d.count > 0 ? d.count : '')
         
-        col.filter(d => !d.show_axis && d.type == 'numeric').each(function(d){
+        col.filter(d => !d.show_axis && d.type == 'number').each(function(d){
           d3.select(this).select('g.axis').selectAll('*').remove()
         })
-        col.filter(d => d.show_axis && d.type == 'numeric').each(function(d){
+        col.filter(d => d.show_axis && d.type == 'number').each(function(d){
           d3.select(this).select('g.axis')
             //.attr('transform', `translate(0,${-header_offset.y + 5})`)
             .call(d3.axisTop(d.scale).ticks(4))
@@ -745,6 +751,7 @@ export default {
 
         row = row.merge(row_join)
         cell = row.selectAll('g.cell')
+          .style("display", d => d.show ? "block" : "none")
           .on("mouseover", function(){
             self.tooltip({ type: "show" })
           })
@@ -752,7 +759,7 @@ export default {
             self.tooltip({ type: "hide" })
           })
           .on("mousemove", function(ev, d){
-            if (d.feature.type == 'categoric') {
+            if (d.feature.type == 'category') {
               const s = d.cond.range.reduce((a, b) => a + b)
               let text = `${d.name}: `
               let items = []
@@ -779,7 +786,7 @@ export default {
             } else {
               self.tooltip({
                 type: "text",
-                data: `${Number(Math.max(d.feature.range[0], d.cond.range[0])).toFixed(3)} < ${d.name} <= ${Number(Math.min(d.feature.range[1], d.cond.range[1])).toFixed(3)}`
+                data: `${Number(Math.max(d.feature.range[0], d.cond.range[0])).toFixed(6)} < ${d.name} <= ${Number(Math.min(d.feature.range[1], d.cond.range[1])).toFixed(6)}`
               })
             }
             self.tooltip({ type: "position", data: { x: ev.pageX, y: ev.pageY }})
@@ -819,14 +826,27 @@ export default {
           
         cell_bars.selectAll('rect.bar')
           .data(d => d.elements).enter()
-          .append('rect').attr('class', 'bar')
+          .append('rect')
+          .attr('class', 'bar')
 
         cell_bars.selectAll('rect.bar')
           .data(d => d.elements)
-          .attr('x', d => d.x0 + 0.75)
-          .attr('y', 1)
-          .attr('width', d => Math.max(d.x1 - d.x0 - 1.5, 0))
-          .attr('height', d => Math.max(d.h - 1.5, 0))
+          .attr('x', d => {
+            if (d.show_hist) {
+              return d.x0 - 1.5
+            } else {
+              return d.x0
+            }
+          })
+          .attr('y', 0)
+          .attr('width', d => {
+            if (d.show_hist) {
+              return Math.max(d.x1 - d.x0, 0) + 3
+            } else {
+              return Math.max(d.x1 - d.x0, 0)
+            }
+          })
+          .attr('height', d => Math.max(d.h, 0))
           .attr('fill', d => {
               if (d.show_hist) {
                 return d3.interpolateLab('#ccc', d.fill)(0.2)
@@ -837,9 +857,11 @@ export default {
               }
           })
           .attr('stroke', d => {
+            return 'none'
               if (d.show_hist) {
                 return d3.interpolateLab('#ccc', d.fill)(0.2)
               } else {
+                //return d3.interpolateLab('white', d.fill)(0.25)
                 return d3.interpolateLab('white', d.fill)(1)
               }
           })
@@ -866,26 +888,35 @@ export default {
           .attr('stroke-width', '1.5px')
         */
         const chart_cell = cell.filter(d => d.show_hist)
-        chart_cell.each(function(d){
-          const data = []
-          //console.log(d.samples, d.feature)
-          for (let i of d.samples) {
-            data.push(self.data_table[i])
+        chart_cell.each(async function(d){
+          // console.log('chart_cell', d)
+          let resp = await axios.post(`${self.server_url}/api/distribution`, {
+            dataname: self.dataset.name,
+            id: d.id, feature: d.name
+          })
+          let data = resp.data
+          // console.log(data)
+
+          let ticks = d.feature.values
+
+          if (d.feature.type == 'number') {
+            data = data.map(e => d.scale(e))
+            //console.log(data)
+            ticks = [0, d.width - matrixview.cell.feature_padding * 2]
           }
 
           const chart = HistogramChart()
             .data(data)
-            .valueTicks(d.feature.type == "categoric" ? d.feature.values : d.feature.range)
-            .x(d.name)
-            .width(d.width)
-            .datatype(d.feature.type == "categoric" ? "category" : "number")
+            .valueTicks(ticks)
+            .datatype(d.feature.type)
+            .width(d.width - matrixview.cell.feature_padding * 2)
             .height(d.height)
             .color(d.fill)
 
           d3.select(this)
             .append("g")
             .attr("class", "histogram")
-            .attr("transform", `translate(${d.x}, 0)`)
+            .attr("transform", `translate(${d.x + matrixview.cell.feature_padding}, 0)`)
             .attr("opacity", 0)
             .call(chart)
 

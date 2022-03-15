@@ -24,10 +24,11 @@
                 :style="`height: 100%; position: relative;`"
                 class="white"
               >
-                <div style="height: calc(100% - 48px); position: relative;">
+                <div style="height: calc(100%); position: relative;">
                   <matrix ref="matrix" v-if="initilized"/>
                 </div>
-                <div class="d-flex justify-space-between align-end pr-4" v-if="initilized">
+                <!--
+                div class="d-flex justify-space-between align-end pr-4" v-if="initilized">
                   <div>
                     <v-btn color="primary" text @click="toggleDatatable" v-show="false">
                       <span v-if="showTable">hide data</span>
@@ -35,10 +36,9 @@
                     </v-btn>
                   </div>
                   <div>
-                    <div class="d-flex justify-end">{{model_info}}</div>
-                    <div class="d-flex justify-end">{{rule_info}}</div>
+                    <div class="d-flex justify-end"></div>
                   </div>
-                </div>
+                </div-->
               </div>
             </v-card>
           </v-col>
@@ -70,12 +70,13 @@
         </v-row>
       </v-container>
       <div class="svg-tooltip"
+      v-html="tooltipview.content"
       :style="{
         left: `${Math.min(page.width - tooltipview.width, tooltipview.x + 10)}px`,
         top: `${tooltipview.y - 10}px`,
         'max-width': `${tooltipview.width}px`,
         visibility: tooltipview.visibility
-      }">{{ tooltipview.content }}
+      }">
       </div>
     </v-main>
   </v-app>
@@ -163,7 +164,6 @@ export default {
       drawer: null,
       tab: 'Data Table',
       initilized: false,
-
       showTable: true
     }
   },
@@ -212,6 +212,24 @@ histogram debug
   padding: .4rem .6rem;
   position: absolute;
   z-index: 300;
+}
+
+.tree-subtitle {
+  font-family: Roboto;
+  font-size: 20px;
+  line-height: 1rem;
+  letter-spacing: 0.0125em;
+  font-weight: 500;
+  fill: rgba(0, 0, 0, 0.6);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.tree-text {
+  font-family: Arial;
+  font-size: 16px;
+  line-height: 1.25rem;
+  letter-spacing: 0.0125em;
+  color: rgba(0, 0, 0, 0.8);
 }
 
 @media (min-width: 2560px) {

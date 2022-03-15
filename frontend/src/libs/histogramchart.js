@@ -2,14 +2,14 @@
 import * as d3 from "d3";
 
 function HistogramChart() {
-  let xAttr = 'x';
   let width = 200, height = 30
   let margin = { top: 0, bottom: 0, left: 0, right: 0 };
   let color = d3.schemeDark2[0];
   let datatype = "category"
   let data = null
   const maxbins = 20
-  let valueTicks = null, valueScale
+  let valueTicks = null
+  let valueScale
   let on_mousemove = () => {}
   let on_mouseout = () => {}
 
@@ -21,36 +21,37 @@ function HistogramChart() {
       .append("g")
       .attr("transform", `translate(${margin.left}, ${margin.top})`)
 
+    const values = data
     if (!valueTicks) {
+      // console.log(datatype)
       if (datatype == "time") {
-        const extent = d3.extent(data, (d) => new Date(d[xAttr]));
+        const extent = d3.extent(values, (d) => new Date(d));
         valueScale = d3.scaleTime().domain(extent).nice();
         valueTicks = valueScale.ticks(maxbins);
         valueScale.range([0, valueTicks.length]);
       } else if (datatype == "number") {
-        const extent = d3.extent(data, (d) => d[xAttr]);
+        const extent = d3.extent(values);
         valueScale = d3.scaleLinear().domain(extent).nice();
         valueTicks = valueScale.ticks(maxbins);
         valueScale.range([0, valueTicks.length]);
       } else {
-        valueTicks = [...new Set(data.map((d) => d[xAttr]))];
+        valueTicks = [...new Set(values)];
         const dict = {};
         valueTicks.forEach((d, i) => (dict[d] = i));
         valueScale = (d) => dict[d];
       }
     } else {
+      // console.log(datatype)
+      // console.log(values, valueTicks)
       if (datatype == "time") {
-        const extent = d3.extent(data, (d) => new Date(d[xAttr]));
+        const extent = d3.extent(values, (d) => new Date(d));
         valueScale = d3.scaleTime().domain(extent).nice();
         valueScale.range([0, valueTicks.length]);
       } else if (datatype == "number") {
         const extent = valueTicks
         valueScale = d3.scaleLinear().domain(extent).nice();
-        valueTicks = valueScale.ticks(Math.min(extent[1] + 1, maxbins));
-        /*if (extent[1] < 10) {
-          console.log('domain', extent, 'range', [0, valueTicks.length])
-          console.log(data.map(d => d[xAttr]))
-        }*/
+        const unique_values = [...new Set(values)]
+        valueTicks = valueScale.ticks(Math.min(Math.max(unique_values.length, extent[1] + 1), maxbins));
         valueScale.range([0, valueTicks.length]);
       } else {
         const dict = {};
@@ -59,9 +60,12 @@ function HistogramChart() {
       }
     }
 
+    // console.log(values)
     const summary_data = valueTicks.map(name => ({ name, count: 0 }))
-    data.forEach(d => {
-      summary_data[Math.min(valueTicks.length - 1, ~~valueScale(d[xAttr]))].count += 1
+    values.forEach(d => {
+      const index = Math.min(valueTicks.length - 1, ~~valueScale(d))
+      // console.log(index)
+      summary_data[index].count += 1
     })
 
     const xScale = d3
@@ -102,12 +106,6 @@ function HistogramChart() {
           return x;
         };
   }
-
-  chart.x = function (_) {
-    if (!arguments.length) return xAttr;
-    xAttr = _;
-    return chart;
-  };
 
   chart.width = function (_) {
     if (!arguments.length) return width;

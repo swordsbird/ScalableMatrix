@@ -19,7 +19,7 @@ export default class Paginator {
         };
         this._options = {
             position: "top",
-            selector: "left",
+            selector: "right",
             buttonColor: "#aaa"
         }
         this._recordsPerPageSelections = [25, 50, 75];

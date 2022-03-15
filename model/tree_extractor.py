@@ -2,11 +2,10 @@
 from os import path
 from copy import deepcopy
 import numpy as np
+import random
 
 def visit_boosting_tree(tree, path = {}):
     if 'decision_type' not in tree:
-        path['value'] = tree['leaf_value']
-        path['weight'] = tree['leaf_weight']
         return [{
             'range': path,
             'value': tree['leaf_value'],
@@ -50,7 +49,8 @@ def visit_decision_tree(tree, index = 0, path = {}):
         leftpath[key] = [r[0], min(r[1], thres)]
     else:
         leftpath[key] = [-1e14, thres]
-    ret += visit_decision_tree(tree, tree.children_left[index], leftpath)
+    if tree.children_left[index] != index:
+        ret += visit_decision_tree(tree, tree.children_left[index], leftpath)
     
     rightpath = deepcopy(path)
     if key in rightpath:
@@ -58,7 +58,8 @@ def visit_decision_tree(tree, index = 0, path = {}):
         rightpath[key] = [max(r[0], thres), r[1]]
     else:
         rightpath[key] = [thres, 1e14]
-    ret += visit_decision_tree(tree, tree.children_right[index], rightpath)
+    if tree.children_right[index] != index:
+        ret += visit_decision_tree(tree, tree.children_right[index], rightpath)
 
     return ret
 
@@ -124,12 +125,18 @@ def path_extractor(model, model_type, data = None):
         ret = []
         for tree_index, estimator in enumerate(model.estimators_):
             treepaths = path_extractor(estimator, 'decision tree')
+            #print('tree', tree_index, len(treepaths))
             for rule_index, path in enumerate(treepaths):
                 path['tree_index'] = tree_index
                 path['rule_index'] = rule_index
                 path['name'] = 'r' + str(tree_index) + '_' + str(rule_index)
             ret += treepaths
         assign_value_for_random_forest(ret, data)
+        if len(ret) > 30000:
+            ret = sorted(ret, key = lambda x: -x['confidence'])
+            ret = ret[:30000]
+        if len(ret) > 15000:
+            ret = random.sample(ret, 15000)
         return ret
     elif model_type == 'lightgbm':
         ret = []

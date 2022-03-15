@@ -4,13 +4,13 @@
     :style="`position: absolute; ${positioning}; user-select: none`"
     v-resize="onResize"
   >
-    <v-btn
+    <!--v-btn
       style="position: absolute; top: 0px; right: 160px"
       :color="showShaps ? 'primary': 'grey'" text small
       @click="toggleShowShaps"
       >
       shap
-    </v-btn>
+    </v-btn-->
     <svg ref="tableview" style="width: 100%; height: 100%"></svg> 
   </div>
 </template>
@@ -33,8 +33,8 @@ export default {
     instance: null,
   }),
   computed: {
-    ...mapGetters(['filtered_data']),
-    ...mapState(['highlighted_sample', 'covered_samples', 'crossfilter', 'data_shaps', 'data_table', 'colorSchema'])
+    ...mapGetters(['filtered_data', 'zoom_level']),
+    ...mapState(['debug', 'dataset', 'highlighted_sample', 'covered_samples', 'crossfilter', 'data_shaps', 'data_table', 'color_schema'])
   },
   watch: {
     covered_samples() { this.renderTable() },
@@ -51,25 +51,40 @@ export default {
       svg.selectAll('*').remove()
 
       if (!this.display) return
+      let all_data = this.zoom_level ? this.filtered_data : this.data_table
 
-      const reordered_data = this.highlighted_sample ? (
-        this.filtered_data
+      let reordered_data = this.highlighted_sample ? (
+        all_data
           .filter(d => this.highlighted_sample === d._id)
-          .concat(this.filtered_data.filter(d => this.highlighted_sample !== d._id))
-      ) : this.filtered_data
+          .concat(all_data.filter(d => this.highlighted_sample !== d._id))
+      ) : all_data
 
       function getWeightedColor (baseColor, shap) {
         return d3.interpolateLab('white', baseColor)(Math.sqrt(Math.sqrt(Math.abs(shap))))
       }
 
+      /*
+      if (this.debug && this.dataset == 'bankruptcy') {
+        console.log('1', reordered_data.filter(d => d['Bankrupt?'] == 1).length)
+        console.log('0', reordered_data.filter(d => d['Bankrupt?'] == 0).length)
+      }
+      */
+      const columns =
+        Object.keys(reordered_data[0])
+          .filter(d => d != '_id')
+          .map(d => ({
+            name: d,
+            format: this.dataset.format,
+            width: 100,
+          }))
       const self = this
       this.instance = new SVGTable(svg)
         .size([width, height])
         .fixedRows(this.highlighted_sample !== undefined ? 1 : 0)
         .fixedColumns(1)
         .rowsPerPage(25)
-        .defaultNumberFormat(',.0d')
-        .style({ border: false })
+        .columns(columns)
+        .style({ border: true })
         .cellRender(function (rect, fill, isHeader, isFixedRow, isFixedCol) {
           if (isHeader) return false
           if (isFixedCol) return false
@@ -77,11 +92,11 @@ export default {
           rect.attr('fill', d => {
             if (d.colIndex < 2) return 'white'
             else if (d.colIndex == 2) {
-              return self.colorSchema[d.value == 'Yes' ? 0 : 1]
+              return self.color_schema[d.value == 'Yes' ? 0 : 1]
             }
             const shapVal = self.data_shaps[d.colIndex - 3][this._data[d.rowIndex]._id]
             if (shapVal !== undefined) {
-              const baseColor = self.colorSchema[shapVal > 0 ? 0: 1]
+              const baseColor = self.color_schema[shapVal > 0 ? 0: 1]
               const color = getWeightedColor(baseColor, shapVal)
               if (isFixedRow) {
                 // TODO: set style for the fixed row
@@ -98,12 +113,12 @@ export default {
             if (self.showShaps) {
               if (d.colIndex < 2) return 'white'
               else if (d.colIndex == 2) {
-                return self.colorSchema[d.value == 'Yes' ? 0 : 1]
+                return self.color_schema[d.value == 'Yes' ? 0 : 1]
               }
               const shapVal = self.data_shaps[d.colIndex - 3][this._data[d.rowIndex]._id]
               let color = 'white'
               if (shapVal !== undefined) {
-                const baseColor = self.colorSchema[shapVal > 0 ? 0: 1]
+                const baseColor = self.color_schema[shapVal > 0 ? 0: 1]
                 color = getWeightedColor(baseColor, shapVal)
               }
               if (hl) {

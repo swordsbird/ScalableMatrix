@@ -6,18 +6,21 @@ function BrushableBarchart() {
   let width = 200,
     height = 30;
   let margin = { top: 25, bottom: 25, left: 20, right: 20 };
-  let colors = { handle: d3.schemeDark2[1], bar: d3.schemeDark2[0] };
+  let colors = { handle: d3.schemeDark2[1], bar: d3.schemeDark2[0], highlight: 'orange' };
   let datatype = "category"
   let data = null
+  let secondary_data = null
   let brushable = true
   const maxbins = 40
   const categorical_thres = 5
   const min_display_height = 3
   const unselect_opacity = .2
+  let target = ''
   let valueTicks, valueScale
   let filter = (d) => 1
   let on_brushend = () => {}
   let on_mousemove = () => {}
+  let on_second_mousemove = () => {}
   let on_mouseout = () => {}
 
   function chart(context) {
@@ -25,7 +28,6 @@ function BrushableBarchart() {
     const g = selection
       .append("g")
       .attr("transform", `translate(${margin.left}, ${margin.top})`)
-    const highlight_bar_color = d3.color(colors.bar).darker(1.5)
 
     const unique_values = [...new Set(data.map(d => d[xAttr]))]
     if (unique_values.length <= categorical_thres) {
@@ -33,6 +35,46 @@ function BrushableBarchart() {
     } else if (unique_values.length > 15) {
       datatype = 'number'
     }
+
+    if (!valueTicks) {
+      if (datatype == "time") {
+        const extent = d3.extent(data, (d) => new Date(d[xAttr]));
+        valueScale = d3.scaleTime().domain(extent).nice();
+        valueTicks = valueScale.ticks(maxbins);
+        valueScale.range([0, valueTicks.length]);
+      } else if (datatype == "number") {
+        const extent = d3.extent(data, (d) => d[xAttr]);
+        valueScale = d3.scaleLinear().domain(extent).nice();
+        valueTicks = valueScale.ticks(maxbins);
+        valueScale.range([0, valueTicks.length]);
+      } else {
+        valueTicks = [...new Set(data.map((d) => d[xAttr]))];
+        const dict = {};
+        valueTicks.forEach((d, i) => (dict[d] = i));
+        valueScale = (d) => dict[d];
+      }
+    } else {
+      if (datatype == "time") {
+        const extent = d3.extent(data, (d) => new Date(d[xAttr]));
+        valueScale = d3.scaleTime().domain(extent).nice();
+        valueScale.range([0, valueTicks.length]);
+      } else if (datatype == "number") {
+        const extent = valueTicks
+        valueScale = d3.scaleLinear().domain(extent).nice();
+        valueTicks = valueScale.ticks(Math.min(Math.max(unique_values.length, extent[1] + 1), maxbins));
+        /*if (extent[1] < 10) {
+          console.log('domain', extent, 'range', [0, valueTicks.length])
+          console.log(data.map(d => d[xAttr]))
+        }*/
+        valueScale.range([0, valueTicks.length]);
+      } else {
+        const dict = {};
+        valueTicks.forEach((d, i) => (dict[d] = i));
+        valueScale = (d) => dict[d]
+      }
+    }
+
+    /*
     if (datatype == "time") {
       const extent = d3.extent(data, (d) => new Date(d[xAttr]));
       valueScale = d3.scaleTime().domain(extent).nice();
@@ -49,10 +91,22 @@ function BrushableBarchart() {
       valueTicks.forEach((d, i) => (dict[d] = i));
       valueScale = (d) => dict[d];
     }
-    const summary_data = valueTicks.map(name => ({ name, count: 0 }))
+    */
+    const summary_data = valueTicks.map(name => ({ name, count: 0, count2: 0 }))
     data.forEach(d => {
-      summary_data[Math.min(valueTicks.length - 1, ~~valueScale(d[xAttr]))].count += 1
+      const index = Math.min(valueTicks.length - 1, ~~valueScale(d[xAttr]))
+      summary_data[index].count += 1
+      summary_data[index].target = summary_data[index].target || {}
+      summary_data[index].target[d[target]] = (summary_data[index].target[d[target]] || 0) + 1
     })
+    if (secondary_data) {
+      secondary_data.forEach(d => {
+        const index = Math.min(valueTicks.length - 1, ~~valueScale(d[xAttr]))
+        summary_data[index].count2 += 1
+        summary_data[index].target2 = summary_data[index].target2 || {}
+        summary_data[index].target2[d[target]] = (summary_data[index].target2[d[target]] || 0) + 1
+      })
+    }
 
     const xScale = d3
       .scaleBand()
@@ -61,7 +115,7 @@ function BrushableBarchart() {
       .padding(0.2);
 
     const yScale = d3
-      .scaleLinear()
+      .scaleSqrt()
       .domain([0, 1, d3.max(summary_data, d => d.count)])
       .range([0, min_display_height, height])
 /*
@@ -75,17 +129,41 @@ function BrushableBarchart() {
     //.call(xAxis)
 
     // Bars
-    const bar = g.selectAll("rect")
+    let bandwidth = xScale.bandwidth()
+    let bandpadding = 2
+    let bandskip = 0
+
+    if (secondary_data && datatype == 'category') {
+      bandwidth = (bandwidth - bandpadding) * 0.5
+      bandskip = bandwidth
+    }
+
+    const bar = g.selectAll(".main-bar")
       .data(summary_data)
       .enter()
       .append("rect")
-      .attr("class", "bar")
+      .attr("class", "main-bar")
       .attr("x", (d) => xScale(d.name))
       .attr("y", (d) => height - yScale(d.count))
-      .attr("width", xScale.bandwidth())
+      .attr("width", bandwidth)
       .attr("height", (d) => yScale(d.count))
       .attr("fill", colors.bar)
       .attr("opacity", 1)
+
+    let bar2 = null
+    if (secondary_data) {
+      bar2 = g.selectAll(".second-bar")
+        .data(summary_data)
+        .enter()
+        .append("rect")
+        .attr("class", "second-bar")
+        .attr("x", (d) => xScale(d.name) + bandskip)
+        .attr("y", (d) => height - yScale(d.count2))
+        .attr("width", bandwidth)
+        .attr("height", (d) => yScale(d.count2))
+        .attr("fill", colors.highlight)
+        .attr("opacity", 1)
+    }
 
     g.append("line")
       .attr("x1", 0)
@@ -177,7 +255,13 @@ function BrushableBarchart() {
           // update bars
           bar.attr("opacity", (d) =>
             d0.includes(d.name) ? 1 : unselect_opacity
-          );
+          )
+
+          if (bar2) {
+            bar2.attr("opacity", (d) =>
+              d0.includes(d.name) ? 1 : unselect_opacity
+            )
+          }
         });
 
       const gBrush = g.append("g").call(brush).call(brush.move, [0, width])
@@ -241,8 +325,19 @@ function BrushableBarchart() {
         .attr("stroke", colors.handle);
     } else {
       summary_data.forEach(d => d.selected = 1)
+
+      if (bar2) {
+        bar2.on('mousemove', function(ev, d){
+          d3.select(this).attr('fill', d3.color(colors.highlight).darker(.5))
+          on_second_mousemove(ev, d)
+        }).on('mouseout', function(ev, d){
+          d3.select(this).attr('fill', colors.highlight)
+          on_mouseout(ev, d)
+        })
+      }
+
       bar.on('mousemove', function(ev, d){
-        d3.select(this).attr('fill', highlight_bar_color)
+        d3.select(this).attr('fill', d3.color(colors.bar).darker(1.5))
         on_mousemove(ev, d)
       }).on('mouseout', function(ev, d){
         d3.select(this).attr('fill', colors.bar)
@@ -305,9 +400,20 @@ function BrushableBarchart() {
     return chart;
   };
 
+  chart.target = function (_) {
+    if (!arguments.length) return target;
+    target = _;
+    return chart;
+  };
+
   chart.data = function (_) {
     if (!arguments.length) return data;
-    data = _;
+    if (_ instanceof Array) {
+      data = _;
+    } else {
+      data = _.first
+      secondary_data = _.second
+    }
     return chart;
   };
 
@@ -325,7 +431,12 @@ function BrushableBarchart() {
 
   chart.mousemove = function (_) {
     if (!arguments.length) return on_mousemove;
-    on_mousemove = _;
+    if (_ instanceof Function) {
+      on_mousemove = _;
+    } else {
+      on_mousemove = _.first
+      on_second_mousemove = _.second
+    }
     return chart;
   };
 
@@ -338,6 +449,12 @@ function BrushableBarchart() {
   chart.filter = function () {
     return filter;
   };
+
+  chart.valueTicks = function(_) {
+    if (!arguments.length) return valueTicks
+    valueTicks = _
+    return chart
+  }
 
   return chart;
 }
