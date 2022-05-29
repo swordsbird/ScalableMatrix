@@ -36,7 +36,7 @@ for get_model in get_model_funcs:
         paths = path_extractor(clf, 'lightgbm')
     print('number of rules', len(paths))
     ex = Extractor(paths, X_train, clf.predict(X_train))
-    for n in [40, 80, 160, 320]:
+    for n in [40, 80, 160, 320, 640]:
         tau = parameters['n_estimators'] * n / len(paths) 
         lambda_ = .2
         w, _, fidelity_train = ex.extract(n, tau, lambda_)

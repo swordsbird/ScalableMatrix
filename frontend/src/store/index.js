@@ -23,13 +23,16 @@ export default new Vuex.Store({
     dataset: {
       name: 'german',
       format: ',.0f',
+      label: ['reject', 'accept']
     },
     dataset_candidates: [{
       name: 'bankruptcy',
       format: ',.5f',
+      label: ['bankrupt', 'non-bankrupt']
     }, {
       name: 'german',
       format: ',.0f',
+      label: ['reject', 'accept']
     }],
     data_features: [],
     data_table: [],
@@ -39,6 +42,7 @@ export default new Vuex.Store({
     page: { width: 1800, height: 1000 },
     covered_samples: [],
     summary_info: {
+      current_rule: null,
       info: null,
       suggestion: null,
     },
@@ -153,6 +157,11 @@ export default new Vuex.Store({
         state.tooltipview.visibility = 'hidden'
       }
     },
+    setNewScore(state, { new_scores }) {
+      state.rules.forEach((d, i) => {
+        d.LOF = new_scores[i]
+      })
+    },
     changeRulefilter(state, filter) {
       state.rulefilter = filter
     },
@@ -161,6 +170,19 @@ export default new Vuex.Store({
     },
     sortLayoutRow(state, key) {
       state.matrixview.sort_by_cover_num = !state.matrixview.sort_by_cover_num
+    },
+    setCurrentRule(state, rule) {
+      if (state.summary_info.current_rule == rule) {
+        state.summary_info.current_rule.is_selected = false
+        state.summary_info.current_rule = null
+      } else {
+        if (state.summary_info.current_rule) {
+          state.summary_info.current_rule.is_selected = false
+        }
+        state.summary_info.current_rule = rule
+        state.summary_info.current_rule.is_selected = true
+      }
+      console.log(rule)
     },
     setSuggestion(state, suggestion) {
       state.summary_info.suggestion = suggestion
@@ -592,7 +614,10 @@ export default new Vuex.Store({
         indexed_cols[item.index] = item
       }
 
-      rows.forEach(row => {
+      let all_text = ''
+      rows.forEach((row, row_index) => {
+        row.height = instance_height
+        row.width = state.matrixview.width - state.matrixview.margin.left
         row.items = row.rule.conds.filter(d => indexed_cols[d.key])
         .map((d, i) => {
           const feature = indexed_cols[d.key]
@@ -646,6 +671,33 @@ export default new Vuex.Store({
             samples: row.rule.show_hist ? [...row.samples] : []
           }
         })
+        row.items.forEach(d => {
+          if (d.feature.type == 'category') {
+            const s = d.cond.range.reduce((a, b) => a + b)
+            let text = `${d.name} is `
+            let items = []
+            if (s <= d.cond.range.length / 2) {
+              for (let i = 0; i < d.cond.range.length; ++i) {
+                if (d.cond.range[i]) {
+                  items.push(d.feature.values[i])
+                }
+              }
+            } else {
+              text += 'NOT '
+              for (let i = 0; i < d.cond.range.length; ++i) {
+                if (!d.cond.range[i]) {
+                  items.push(d.feature.values[i])
+                }
+              }
+            }
+            //console.log(text, items, d.cond.range, d.feature)
+            text += items.join(', ')
+            d.text = text
+          } else {
+            let precision = parseInt(state.dataset.format)
+            d.text = `${Number(Math.max(d.feature.range[0], d.cond.range[0])).toFixed(precision)} < ${d.name} <= ${Number(Math.min(d.feature.range[1], d.cond.range[1])).toFixed(precision)}`
+          }
+        })
         row.attr = { num: row.attrwidth.num, num_children: row.attrwidth.num_children }
         row.extends = extended_cols.map((d, i) => ({
           x1: indexed_cols[d.index].x,
@@ -659,7 +711,15 @@ export default new Vuex.Store({
           value: row.rule[d.index],
           represent: row.rule.represent,
         }))
+        let current_text = '#' + row_index + ' if'
+        for (let i = 0; i < row.items.length; ++i) {
+          let d = row.items[i]
+          current_text += ' ' + d.text + ((i == row.items.length - 1) ? ' then' : ' and')
+        }
+        current_text += ' ' + state.dataset.label[row.rule.predict]
+        all_text += current_text + '\n\n'
       })
+      console.log('all_text', all_text)
 
       // console.log('current zoom level', state.matrixview.zoom_level)
       state.layout = {
@@ -857,6 +917,16 @@ export default new Vuex.Store({
       } else if (type == 'position') {
         commit('updateTooltip', { x: data.x, y: data.y })
       }
+    },
+    async updateRuleLabel({ state, commit }, { name, label }) {
+      let resp = await axios.post(`${state.server_url}/api/adjust_label`, {
+        dataname: state.dataset.name,
+        name: name,
+        label: label,
+        selected_indexes: state.rules.map(d => d.id),
+      })
+      commit('setNewScore', resp.data)
+      commit('updateMatrixLayout')
     },
     async findSuggestion({ state, commit }, target) {
       let resp = await axios.post(`${state.server_url}/api/suggestions`, {

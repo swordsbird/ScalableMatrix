@@ -4,8 +4,11 @@ from turtle import position
 import pandas as pd
 import numpy as np
 import pickle
-from sklearn.neighbors import LocalOutlierFactor
 from sklearn.metrics import pairwise_distances
+from sklearn.neighbors import LocalOutlierFactor
+from sklearn.ensemble import IsolationForest
+from sklearn.svm import OneClassSVM
+from sklearn.linear_model import LinearRegression
 from annoy import AnnoyIndex
 import os
 import bisect
@@ -91,6 +94,70 @@ data_encoding['german'] = {
     'foreign_worker': ['No', 'Yes'],
 }
 
+class DetectorEnsemble:
+    def __init__(self):
+        self.detectors = []
+        self.detectors.append(('lof1', LocalOutlierFactor(metric="precomputed", n_neighbors=10)))
+        self.detectors.append(('lof2', LocalOutlierFactor(metric="precomputed", n_neighbors=20)))
+        self.detectors.append(('lof3', LocalOutlierFactor(metric="precomputed", n_neighbors=30)))
+        self.detectors.append(('iforest1', IsolationForest(random_state = 0, n_estimators = 100)))
+        self.detectors.append(('iforest2', IsolationForest(random_state = 0, n_estimators = 200)))
+        self.detectors.append(('ocsvm1', OneClassSVM(gamma='auto', kernel='rbf')))
+    
+    def fit_detector(self, X, y, sample_weight = None):
+        self.clf = LinearRegression(fit_intercept=True, normalize=False, copy_X=True).fit(X, y, sample_weight = sample_weight)
+
+    def load(self, scores):
+        self.scores = scores
+        self.n = scores.shape[0]
+        self.ground_truth = {}
+        self.adjust_sample_weight = self.n // 50
+        weights = np.ones(len(self.detectors))
+        weights = weights / np.sum(weights)
+        y = (self.scores * weights).sum(axis = 1)
+        self.fit_detector(self.scores, y)
+
+    def init(self, mat):
+        dist = pairwise_distances(X = mat, metric='euclidean')
+        self.scores = []
+        for (name, detector) in self.detectors:
+            if name[:3] == 'lof':
+                detector.fit_predict(dist)
+                self.scores.append(-detector.negative_outlier_factor_)
+            else:
+                detector.fit_predict(mat)
+                self.scores.append(-detector.score_samples(mat))
+        tmp = []
+        for score in self.scores:
+            min_s = np.min(score)
+            max_s = np.max(score)
+            score = (score - min_s) / (max_s - min_s)
+            tmp.append(score)
+        self.n = mat.shape[0]
+        self.scores = np.array(tmp)
+        self.ground_truth = {}
+        self.adjust_sample_weight = self.n // 50
+        weights = np.ones(len(self.detectors))
+        weights = weights / np.sum(weights)
+
+        self.scores = self.scores.transpose()
+        y = (self.scores * weights).sum(axis = 1)
+        self.fit_detector(self.scores, y)
+    
+    def predict_score(self):
+        y = self.clf.predict(self.scores)
+        for i in self.ground_truth:
+            y[i] = self.ground_truth[i]
+        return y
+
+    def adjust_weight(self, idx, score):
+        self.ground_truth[idx] = score
+        sample_weight = np.ones(self.n)
+        for i in self.ground_truth:
+            sample_weight[i] = self.adjust_sample_weight
+        y = self.predict_score()
+        self.fit_detector(self.scores, y, sample_weight)
+
 class DataLoader():
     def __init__(self, data, model, name, target, targets, target_value = 1):
         self.data_table = data
@@ -101,8 +168,6 @@ class DataLoader():
         self.shap_values = self.model['shap_values']
         self.path_index = {}
 
-        # print('0', np.sum(data[target] == 0))
-        # print('1', np.sum(data[target] == 1))
         for index, path in enumerate(self.paths):
             self.path_index[path['name']] = index
         max_level = max([path['level'] for path in self.paths])
@@ -133,8 +198,10 @@ class DataLoader():
         
         cache_path = os.path.join(cache_dir_path, name + '.pkl')
         if os.path.exists(cache_path):
-            paths = pickle.load(open(cache_path, 'rb'))
-            self.paths = paths
+            data = pickle.load(open(cache_path, 'rb'))
+            self.paths = data['paths']
+            self.detector = DetectorEnsemble()
+            self.detector.load(data['scores'])
         else:
             path_mat = np.array([path['sample'] for path in self.paths])
             np.seterr(divide='ignore',invalid='ignore')
@@ -143,17 +210,12 @@ class DataLoader():
             path_dist = pairwise_distances(X = path_mat, metric='jaccard')
             tree = AnnoyIndex(len(path_mat[0]), 'euclidean')
             for i in range(len(path_mat)):
-                s = np.sum(path_mat[i])
-                path_mat[i] /= s
                 tree.add_item(i, path_mat[i])
             tree.build(10)
             self.tree = tree
-            K = int(np.ceil(np.sqrt(len(self.X))))
-            K = 10
-            clf = LocalOutlierFactor(n_neighbors=K, metric="precomputed")
-            clf.fit(path_dist)
-            path_lof = -clf.negative_outlier_factor_
-            print('rule LOF', min(path_lof), max(path_lof))
+            self.detector = DetectorEnsemble()
+            self.detector.init(path_mat)
+            path_lof = self.detector.predict_score()
 
             for i in range(len(self.paths)):
                 self.paths[i]['lof'] = float(path_lof[i])
@@ -182,7 +244,7 @@ class DataLoader():
             for i in range(len(self.paths)):
                 for j in self.paths[i]['children']:
                     self.paths[j]['father'] = i
-            pickle.dump(self.paths, open(cache_path, 'wb'))
+            pickle.dump({ 'paths': self.paths, 'scores': self.detector.scores }, open(cache_path, 'wb'))
         self.path_dict = {}
         for path in self.paths:
             self.path_dict[path['name']] = path
@@ -376,7 +438,7 @@ class DatasetLoader():
         target = 'credit_risk'
         targets = ['Rejected', 'Approved']
         
-        model = pickle.load(open('../model/output/german0315.pkl', 'rb'))
+        model = pickle.load(open('../model/output/german0315v2.pkl', 'rb'))
         #        model = pickle.load(open('../model/output/german0120v2.pkl', 'rb'))
         loader = DataLoader(data, model, 'german', target, targets)
         loader.set_original_data(original_data)

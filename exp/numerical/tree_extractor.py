@@ -132,11 +132,13 @@ def path_extractor(model, model_type, data = None):
                 path['name'] = 'r' + str(tree_index) + '_' + str(rule_index)
             ret += treepaths
         assign_value_for_random_forest(ret, data)
+        '''
         if len(ret) > 30000:
             ret = sorted(ret, key = lambda x: -x['confidence'])
             ret = ret[:30000]
         if len(ret) > 15000:
             ret = random.sample(ret, 15000)
+        '''
         return ret
     elif model_type == 'lightgbm':
         ret = []

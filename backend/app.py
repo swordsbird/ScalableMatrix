@@ -101,10 +101,12 @@ def get_explore_rules():
     loader = data_loader.get(dataname)
     fathers = data['idxs']
     idxes = []
+    father_idxes = []
     for name in fathers:
         j = loader.path_index[name]
         neighbors = loader.paths[j]['children']
         idxes += [j] + neighbors
+        father_idxes.append(j)
     idxset = set()
     new_idxes = []
     for i in idxes:
@@ -112,6 +114,17 @@ def get_explore_rules():
             new_idxes.append(i)
             idxset.add(i)
     idxes = new_idxes
+    relevant_sample_idxes = loader.get_relevant_samples(father_idxes)
+    idxes = [(i, d) for i, d in enumerate(idxes)]
+    n = 80 - len(father_idxes) * 3
+    if len(idxes) > n:
+        idxes1 = [x for x in idxes if x[1] in father_idxes]
+        idxes2 = [x for x in idxes if x[1] not in father_idxes]
+        idxes2 = random.sample(idxes2, n - len(idxes1))
+        idxes = idxes1 + idxes2
+        idxes.sort()
+        idxes = [x[1] for x in idxes]
+
     paths = []
     for i in idxes:
         paths.append(loader.get_encoded_path(i))
@@ -125,6 +138,23 @@ def get_explore_rules():
             'positives': positives,
             'total': total,
         },
+    }
+    return json.dumps(response, cls=NpEncoder)
+
+@app.route('/api/adjust_label', methods=["POST"])
+def adjust_label():
+    data = json.loads(request.get_data(as_text=True))
+    print(data)
+    dataname = data['dataname']
+    name = data['name']
+    label = data['label']
+    loader = data_loader.get(dataname)
+    idx = loader.path_index[name]
+    loader.detector.adjust_weight(idx, label)
+    idxes = [loader.path_index[i] for i in loader.selected_indexes]
+    new_score = loader.detector.predict_score()
+    response = {
+        'new_scores': [new_score[i] for i in idxes],
     }
     return json.dumps(response, cls=NpEncoder)
 

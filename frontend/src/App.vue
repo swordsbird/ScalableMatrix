@@ -198,6 +198,7 @@ histogram debug
   color: #2c3e50;
   background: #f7f7f7;
   height: 100%;
+  font-size: 16px;
   overflow-y: hidden;
 }
 

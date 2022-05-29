@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import { mapActions, mapGetters, mapState } from 'vuex'
+import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
 import * as d3 from 'd3'
 import HistogramChart from "../libs/histogramchart";
 import Scrollbar from "../libs/scrollbar";
@@ -84,6 +84,7 @@ export default {
   //   this.onResize()
   // },
   methods: {
+    ...mapMutations(['setCurrentRule']),
     ...mapActions([ 'tooltip', 'orderColumn', 'orderRow', 'showRules', 'updateMatrixSize' ]),
     onResize(){
       const width = this.$refs.matrix_parent.getBoundingClientRect().width
@@ -508,6 +509,16 @@ export default {
           .attr('class', 'row')
           .style('opacity', 0)
 
+        let background = row_join.append('g')
+          .attr('class', 'background')
+          .attr('opacity', 0)
+
+        background
+          .append('rect')
+          .attr('width', d => d.width)
+          .attr('height', d => d.height)
+          .attr('fill', 'lightgray')
+
         row_join.selectAll(".glyph")
           .data(d => [d]).enter()
           .append('g')
@@ -515,6 +526,18 @@ export default {
           .attr('transform', `translate(2.5, 0)`)
           
         row = row.merge(row_join)
+        row.on('mouseenter', function(ev, d) {
+          d3.select(this).select('.background')
+            .attr('opacity', 0.5 + (d.is_selected ? 0.5 : 0))
+        }).on('mouseout', function(ev, d) {
+          d3.select(this).select('.background')
+            .attr('opacity', d.is_selected ? 0.5 : 0)
+        }).on('click', function(ev, d) {
+          self.setCurrentRule(d)
+          row.select('.background')
+            .attr('opacity', d => d.is_selected ? 0.5 : 0)
+        })
+
         row.select('.glyph').selectAll('*').remove()
         let represent_glyph = row//.filter(d => d.rule.represent)
           .select('.glyph')
@@ -759,36 +782,10 @@ export default {
             self.tooltip({ type: "hide" })
           })
           .on("mousemove", function(ev, d){
-            if (d.feature.type == 'category') {
-              const s = d.cond.range.reduce((a, b) => a + b)
-              let text = `${d.name}: `
-              let items = []
-              if (s <= d.cond.range.length / 2) {
-                for (let i = 0; i < d.cond.range.length; ++i) {
-                  if (d.cond.range[i]) {
-                    items.push(d.feature.values[i])
-                  }
-                }
-              } else {
-                text += 'NOT '
-                for (let i = 0; i < d.cond.range.length; ++i) {
-                  if (!d.cond.range[i]) {
-                    items.push(d.feature.values[i])
-                  }
-                }
-              }
-              //console.log(text, items, d.cond.range, d.feature)
-              text += items.join(', ')
-              self.tooltip({
-                type: "text",
-                data: text,
-              })
-            } else {
-              self.tooltip({
-                type: "text",
-                data: `${Number(Math.max(d.feature.range[0], d.cond.range[0])).toFixed(6)} < ${d.name} <= ${Number(Math.min(d.feature.range[1], d.cond.range[1])).toFixed(6)}`
-              })
-            }
+            self.tooltip({
+              type: "text",
+              data: d.text,
+            })
             self.tooltip({ type: "position", data: { x: ev.pageX, y: ev.pageY }})
           })
           .raise()
@@ -945,9 +942,10 @@ export default {
 
         row_extend.select('rect.bar')
           .attr('x', d => d.x1)
-          .attr('width', d => d.x2 - d.x1)
           .attr('height', d => d.height)
           .attr('fill', d => d.fill)
+          .transition().duration(matrixview.duration)
+          .attr('width', d => d.x2 - d.x1)
         
         row
           .transition().duration(matrixview.duration)
