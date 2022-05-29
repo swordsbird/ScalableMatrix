@@ -97,12 +97,12 @@ data_encoding['german'] = {
 class DetectorEnsemble:
     def __init__(self):
         self.detectors = []
-        self.detectors.append(('lof1', LocalOutlierFactor(metric="precomputed", n_neighbors=10)))
-        self.detectors.append(('lof2', LocalOutlierFactor(metric="precomputed", n_neighbors=20)))
-        self.detectors.append(('lof3', LocalOutlierFactor(metric="precomputed", n_neighbors=30)))
-        self.detectors.append(('iforest1', IsolationForest(random_state = 0, n_estimators = 100)))
-        self.detectors.append(('iforest2', IsolationForest(random_state = 0, n_estimators = 200)))
-        self.detectors.append(('ocsvm1', OneClassSVM(gamma='auto', kernel='rbf')))
+        self.detectors.append(('1', IsolationForest(random_state = 0, n_estimators = 100, contamination = 0.02)))
+        self.detectors.append(('2', IsolationForest(random_state = 0, n_estimators = 200, contamination = 0.02)))
+        self.detectors.append(('3',IsolationForest(random_state = 0, n_estimators = 100, contamination = 0.05)))
+        self.detectors.append(('4', IsolationForest(random_state = 0, n_estimators = 200, contamination = 0.05)))
+        self.detectors.append(('5',  IsolationForest(random_state = 0, n_estimators = 100, contamination = 0.1)))
+        self.detectors.append(('6',  IsolationForest(random_state = 0, n_estimators = 200, contamination = 0.1)))
     
     def fit_detector(self, X, y, sample_weight = None):
         self.clf = LinearRegression(fit_intercept=True, normalize=False, copy_X=True).fit(X, y, sample_weight = sample_weight)

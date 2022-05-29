@@ -21,12 +21,12 @@ from sklearn.linear_model import LinearRegression
 class DetectorEnsemble:
     def __init__(self):
         self.detectors = []
-        self.detectors.append(('1', IsolationForest(random_state = 0, n_estimators = 100)))
-        self.detectors.append(('2', IsolationForest(random_state = 0, n_estimators = 200)))
-        self.detectors.append(('3',IsolationForest(random_state = 10, n_estimators = 100)))
-        self.detectors.append(('4', IsolationForest(random_state = 10, n_estimators = 200)))
-        self.detectors.append(('5',  IsolationForest(random_state = 20, n_estimators = 100, contamination = 0.2)))
-        self.detectors.append(('6',  IsolationForest(random_state = 20, n_estimators = 200, contamination = 0.2)))
+        self.detectors.append(('1', IsolationForest(random_state = 0, n_estimators = 100, contamination = 0.02)))
+        self.detectors.append(('2', IsolationForest(random_state = 0, n_estimators = 200, contamination = 0.02)))
+        self.detectors.append(('3',IsolationForest(random_state = 0, n_estimators = 100, contamination = 0.05)))
+        self.detectors.append(('4', IsolationForest(random_state = 0, n_estimators = 200, contamination = 0.05)))
+        self.detectors.append(('5',  IsolationForest(random_state = 0, n_estimators = 100, contamination = 0.1)))
+        self.detectors.append(('6',  IsolationForest(random_state = 0, n_estimators = 200, contamination = 0.1)))
         '''
         self.detectors.append(('knn', NearestNeighbors(algorithm='ball_tree')))
         self.detectors.append(('lof2', LocalOutlierFactor(metric="precomputed")))

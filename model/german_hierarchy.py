@@ -248,15 +248,14 @@ for index, path in enumerate(paths):
 
 params = [80]
 level_info = {}
-
+'''
 curves = []
 
 for level, n in enumerate(params):
     tau = exp.parameters['n_estimators'] * n / len(paths) * 0.5
-    lambda_ = 0
+    lambda_ = 0.01
     ex = Extractor(last_paths, exp.X_train, exp.clf.predict(exp.X_train))
-    score = 1 - ex.weight
-    while lambda_ < 100:
+    while lambda_ < 40:
         w, _, fidelity_train, result = ex.extract(n, tau, lambda_)
         [idx] = np.nonzero(w)
 
@@ -265,13 +264,14 @@ for level, n in enumerate(params):
         fidelity_train = ex.evaluate(w, exp.X_train, exp.clf.predict(exp.X_train))
         fidelity_test = ex.evaluate(w, exp.X_test, exp.clf.predict(exp.X_test))
         obj, first_term, second_term = result
+        second_term /= lambda_
         curves.append((lambda_, first_term, 'fidelity'))
         curves.append((lambda_, second_term, 'score'))
         curves.append((lambda_, obj, 'obj'))
-        f = open('output/record_0529.txt', 'a')
+        f = open('output/record_0529_2.txt', 'a')
         f.write('%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n' % (lambda_, first_term, second_term, obj, fidelity_train, fidelity_test))
         f.close()
-        lambda_ += 5
+        lambda_ += 1
 
     level_info[level + 1] = {
         'fidelity_test': fidelity_test,
@@ -293,18 +293,22 @@ sns.lineplot(data=df, x='x', y='y', hue='label', markers=True)
 plt.savefig('curve.png')
 
 '''
+
 for level, n in enumerate(params):
     tau = exp.parameters['n_estimators'] * n / len(paths) * 0.5
-    lambda_ = 0
+    lambda_ = 6
     ex = Extractor(last_paths, exp.X_train, exp.clf.predict(exp.X_train))
-    w, _, fidelity_train = ex.extract(n, tau, lambda_)
+    w, _, fidelity_train, result = ex.extract(n, tau, lambda_)
     [idx] = np.nonzero(w)
 
     accuracy_train = ex.evaluate(w, exp.X_train, exp.y_train)
     accuracy_test = ex.evaluate(w, exp.X_test, exp.y_test)
+    fidelity_train = ex.evaluate(w, exp.X_train, exp.clf.predict(exp.X_train))
     fidelity_test = ex.evaluate(w, exp.X_test, exp.clf.predict(exp.X_test))
-    print(level, n, 'accuracy_train', accuracy_train, 'accuracy_test', accuracy_test, 'fidelity_test', fidelity_test)
-    
+    obj, first_term, second_term = result
+    second_term /= lambda_
+    print('lambda: %.6f\nfirst term: %.6f\nsecond term: %.6f\nobj value: %.6f\nfidelity train: %.6f\nfidelity test: %.6f\n' % (lambda_, first_term, second_term, obj, fidelity_train, fidelity_test))
+
     level_info[level + 1] = {
         'fidelity_test': fidelity_test,
         'accuracy_test': accuracy_test,
@@ -313,8 +317,8 @@ for level, n in enumerate(params):
         name2path[last_paths[i]['name']]['level'] = level + 1
     curr_paths = [last_paths[i] for i in idx]
     last_paths = curr_paths
-    print(len(last_paths))
-'''
+
+
 
 import shap
 

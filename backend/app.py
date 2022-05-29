@@ -6,6 +6,7 @@ import random
 from flask_cors import CORS
 import json
 import numpy as np
+from model_extractor import Extractor
 
 from dataset import DatasetLoader
 data_loader = DatasetLoader()
@@ -120,7 +121,11 @@ def get_explore_rules():
     if len(idxes) > n:
         idxes1 = [x for x in idxes if x[1] in father_idxes]
         idxes2 = [x for x in idxes if x[1] not in father_idxes]
-        idxes2 = random.sample(idxes2, n - len(idxes1))
+        paths = [loader.paths[x[1]] for x in idxes2]
+        ex = Extractor(paths, loader['train_X'][relevant_sample_idxes], loader['train_y'][relevant_sample_idxes])
+        w, _, _, _ = ex.extract(n, loader['tau'], loader['lambda_'])
+        [idx] = np.nonzero(w)
+        idxes2 = [idxes2[i] for i in idx]
         idxes = idxes1 + idxes2
         idxes.sort()
         idxes = [x[1] for x in idxes]
