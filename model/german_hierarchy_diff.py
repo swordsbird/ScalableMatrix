@@ -7,7 +7,7 @@ import os
 from imblearn.over_sampling import SMOTE
 from sample import create_sampler
 from tree_extractor import path_extractor
-from model_extractor_iforest import Extractor
+from model_extractor import Extractor
 import pickle
 
 from matplotlib import pyplot as plt
@@ -268,7 +268,7 @@ for level, n in enumerate(params):
         curves.append((lambda_, first_term, 'fidelity'))
         curves.append((lambda_, second_term, 'score'))
         curves.append((lambda_, obj, 'obj'))
-        f = open('output/record_0529_4.txt', 'a')
+        f = open('output/record_0529_3.txt', 'a')
         f.write('%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n' % (lambda_, first_term, second_term, obj, fidelity_train, fidelity_test))
         f.close()
         lambda_ += 1
@@ -290,7 +290,7 @@ df = pd.DataFrame({
 })
 plt.figure(figsize=(15, 10))
 sns.lineplot(data=df, x='x', y='y', hue='label', markers=True)
-plt.savefig('curve2.png')
+plt.savefig('curve_diff.png')
 
 '''
 
@@ -319,6 +319,7 @@ for level, n in enumerate(params):
     last_paths = curr_paths
 
 '''
+
 import shap
 
 explainer = shap.Explainer(exp.clf)

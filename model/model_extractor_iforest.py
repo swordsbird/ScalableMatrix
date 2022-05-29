@@ -18,16 +18,24 @@ from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestNeighbors
 
 from sklearn.linear_model import LinearRegression
+
 class DetectorEnsemble:
     def __init__(self):
         self.detectors = []
-        self.detectors.append(('1', IsolationForest(random_state = 0, n_estimators = 100)))
-        self.detectors.append(('2', IsolationForest(random_state = 0, n_estimators = 200)))
-        self.detectors.append(('3',IsolationForest(random_state = 10, n_estimators = 100)))
-        self.detectors.append(('4', IsolationForest(random_state = 10, n_estimators = 200)))
-        self.detectors.append(('5',  IsolationForest(random_state = 20, n_estimators = 100, contamination = 0.2)))
-        self.detectors.append(('6',  IsolationForest(random_state = 20, n_estimators = 200, contamination = 0.2)))
-        #
+        '''
+        self.detectors.append(('1', IsolationForest(random_state = 0, n_estimators = 100, contamination = 0.02)))
+        self.detectors.append(('2', IsolationForest(random_state = 0, n_estimators = 200, contamination = 0.02)))
+        self.detectors.append(('3',IsolationForest(random_state = 0, n_estimators = 100, contamination = 0.05)))
+        self.detectors.append(('4', IsolationForest(random_state = 0, n_estimators = 200, contamination = 0.05)))
+        self.detectors.append(('5',  IsolationForest(random_state = 0, n_estimators = 100, contamination = 0.1)))
+        self.detectors.append(('6',  IsolationForest(random_state = 0, n_estimators = 200, contamination = 0.1)))
+        '''
+        self.detectors.append(('iforest1', IsolationForest(random_state = 0, max_samples = 128, n_estimators = 100)))
+        self.detectors.append(('iforest2', IsolationForest(random_state = 0, max_samples = 128, n_estimators = 200)))
+        self.detectors.append(('iforest3', IsolationForest(random_state = 0, max_samples = 256, n_estimators = 100)))
+        self.detectors.append(('iforest4', IsolationForest(random_state = 0, max_samples = 256, n_estimators = 200)))
+        self.detectors.append(('iforest5', IsolationForest(random_state = 0, max_samples = 512, n_estimators = 100)))
+        self.detectors.append(('iforest6', IsolationForest(random_state = 0, max_samples = 512, n_estimators = 200)))
     
     def fit_detector(self, X, y):
         self.clf = LinearRegression(fit_intercept=True, normalize=False, copy_X=True).fit(X, y)
@@ -182,7 +190,7 @@ class Extractor:
         self.YW = YW
         return self.YW
 
-    def LP_extraction(self, cost, y, n_rules, tau, lambda_):
+    def LP_extraction(self, score, y, n_rules, tau, lambda_):
         m = pulp.LpProblem(sense=pulp.LpMinimize)
         var = []
         N = y.shape[1]
@@ -192,11 +200,12 @@ class Extractor:
             var.append(pulp.LpVariable(f'z{i}', cat=pulp.LpContinuous, lowBound=0, upBound=1))
         for i in range(N):
             var.append(pulp.LpVariable(f'k{i}', cat=pulp.LpContinuous, lowBound=0))
-        a = 1#1.0 / N
-        b = lambda_#-1.0 / n_rules * lambda_
-        m += pulp.lpSum([var[j + M] * a for j in range(N)] + [var[j] * (1 - cost[j]) * b for j in range(M)])
+        first_term = pulp.LpVariable('first', cat=pulp.LpContinuous, lowBound=0)
+        second_term = pulp.LpVariable('second', cat=pulp.LpContinuous, lowBound=0)
+        m.setObjective(first_term + second_term)
+        m += (pulp.lpSum([var[j + M] for j in range(N)]) <= first_term)
+        m += (pulp.lpSum([var[j] * (1 - score[j]) * lambda_ for j in range(M)]) <= second_term)
         m += (pulp.lpSum([var[j] for j in range(M)]) <= n_rules)
-        # m += (pulp.lpSum([var[j] for j in range(M)]) >= n_rules)
         for j in range(N):
             m += (var[j + M] >= zero + tau - pulp.lpSum([var[k] * y[k][j] for k in range(M)]))
             m += (var[j + M] >= zero)
@@ -206,4 +215,4 @@ class Extractor:
         for k in np.argsort(z)[:-n_rules]:
             z[k] = 0
         z = z / np.sum(z)
-        return z, (pulp.value(m.objective) - zero * N)
+        return z, (pulp.value(m.objective) - zero * N, first_term.value() - zero * N, second_term.value())

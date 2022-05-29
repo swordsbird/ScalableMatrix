@@ -18,9 +18,11 @@ from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestNeighbors
 
 from sklearn.linear_model import LinearRegression
+
 class DetectorEnsemble:
     def __init__(self):
         self.detectors = []
+        '''
         self.detectors.append(('1', IsolationForest(random_state = 0, n_estimators = 100, contamination = 0.02)))
         self.detectors.append(('2', IsolationForest(random_state = 0, n_estimators = 200, contamination = 0.02)))
         self.detectors.append(('3',IsolationForest(random_state = 0, n_estimators = 100, contamination = 0.05)))
@@ -29,11 +31,11 @@ class DetectorEnsemble:
         self.detectors.append(('6',  IsolationForest(random_state = 0, n_estimators = 200, contamination = 0.1)))
         '''
         self.detectors.append(('knn', NearestNeighbors(algorithm='ball_tree')))
-        self.detectors.append(('lof2', LocalOutlierFactor(metric="precomputed")))
-        self.detectors.append(('iforest1', IsolationForest(random_state = 0)))
-        self.detectors.append(('ocsvm1', OneClassSVM(gamma='auto', kernel='rbf')))
+        self.detectors.append(('lof', LocalOutlierFactor(metric="precomputed")))
+        self.detectors.append(('robustcov', MinCovDet()))
+        self.detectors.append(('iforest', IsolationForest()))
+        self.detectors.append(('ocsvm', OneClassSVM()))
         self.detectors.append(('dbscan',  DBSCAN()))
-        '''
     
     def fit_detector(self, X, y):
         self.clf = LinearRegression(fit_intercept=True, normalize=False, copy_X=True).fit(X, y)
