@@ -6,7 +6,9 @@ import random
 from flask_cors import CORS
 import json
 import numpy as np
-from model_extractor import Extractor
+import sys
+sys.path.append('..')
+from lib.model_reduction import Extractor
 
 from dataset import DatasetLoader
 data_loader = DatasetLoader()
