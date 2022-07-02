@@ -19,6 +19,7 @@ import math
 class DetectorEnsemble:
     def __init__(self):
         self.detectors = []
+        '''
         self.detectors.append(('iforest1', IsolationForest(random_state = 0, max_samples = 128, n_estimators = 100)))
         self.detectors.append(('iforest2', IsolationForest(random_state = 0, max_samples = 128, n_estimators = 200)))
         self.detectors.append(('iforest3', IsolationForest(random_state = 0, max_samples = 256, n_estimators = 100)))
@@ -28,11 +29,10 @@ class DetectorEnsemble:
         '''
         self.detectors.append(('knn', NearestNeighbors(algorithm='ball_tree')))
         self.detectors.append(('lof', LocalOutlierFactor(metric="precomputed")))
-        self.detectors.append(('robustcov', MinCovDet()))
+        #self.detectors.append(('robustcov', MinCovDet()))
         self.detectors.append(('iforest', IsolationForest()))
         self.detectors.append(('ocsvm', OneClassSVM()))
         self.detectors.append(('dbscan',  DBSCAN()))
-        '''
     
     def fit_detector(self, X, y):
         self.clf = LinearRegression(fit_intercept=True, normalize=False, copy_X=True).fit(X, y)
@@ -170,14 +170,21 @@ current_encoding = {
     'foreign_worker': ['No', 'Yes'],
 }
 
-model = pickle.load(open('../../model/output/german0315v2.pkl', 'rb'))
+model = pickle.load(open('../../output/dump/german0315v2.pkl', 'rb'))
 paths = model['paths']
 features = model['features']
 mat = np.array([p['sample'] for p in paths]).astype('float')
+for i in range(mat.shape[0]):
+    mat[i] = mat[i] > 0
+    mat[i] /= mat[i].sum()
+all_dist = pairwise_distances(X = mat, metric='euclidean')
+
+expected_count = 50
+expected_one_class_count = 40
 
 ensemble = DetectorEnsemble()
 ensemble.fit(mat)
-selected_path_idxes = ensemble.weighted_score().argsort()[-50:][::-1]
+selected_path_idxes = ensemble.weighted_score().argsort()[::-1]
 
 output_labels = ['reject', 'accept']
 
@@ -220,16 +227,45 @@ for index, feature in enumerate(features):
         feature['values'] = feature['range']
 
 rules = []
+class_count = {}
 max_n_conds = 0
 for i in selected_path_idxes:
     conds, output = interpret_path(paths[i], features)
-    rules.append({'cond': conds, 'predict': output})
+    if class_count.get(output, 0) >= expected_one_class_count:
+        continue
+    class_count[output] = class_count.get(output, 0) + 1
+    rules.append({'cond': conds, 'predict': output, 'index': i})
     max_n_conds = max(len(conds), max_n_conds)
+    if len(rules) >= expected_count:
+        break
 conds_per_line = 4
 max_n_conds = math.ceil(max_n_conds / conds_per_line) * conds_per_line
 
-f = open('rule2.csv', 'w')
+
+rule_idxes = [rule['index'] for rule in rules]
+'''
+rule_type = [
+    1,1,1,1,1, 0,0,0,0,1, 
+    0,0,0,1,1, 0,0,0,1,0,
+    0,1,0,1,1, 0,0,0,0,1,
+    1,1,0,0,0, 0,0,1,0,1,
+    0,0,1,0,1, 0,0,1,0,1
+]
+'''
+rule_type = [
+    1,1,0,1,1,0,0,0,0,1,
+    0,0,0,1,1,0,0,0,1,0,
+    0,0,0,1,1,0,1,0,0,0,
+    0,1,0,0,0,0,0,0,0,0,
+    0,0,1,0,0,0,0,1,0,1,
+]
+
+f = open('rule.csv', 'w')
 for it, rule in enumerate(rules):
+    nearest = all_dist[rule_idxes[it], rule_idxes].argsort()[1:6]
+    print('rule', it, rule_type[it], ''.join([str(rule_type[i]) for i in nearest]))
+    print('nearest', nearest)
+    print('dist', all_dist[rule_idxes[it], nearest])
     s = '' + str(it)
     line = 0
     n_conds = len(rule['cond'])

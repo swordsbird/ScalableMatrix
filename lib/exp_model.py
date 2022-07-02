@@ -16,7 +16,7 @@ import seaborn as sns
 random_state = 190
 
 class ExpModel:
-    def __init__(self, dataset, model):
+    def __init__(self, dataset, model, k_fold = 0):
         self.dataset = dataset
         self.model = model
         self.n_splits = 4
@@ -24,6 +24,7 @@ class ExpModel:
         self._precision = []
         self._recall = []
         self._f1_score = []
+        self.fold = k_fold
 
     def init(self):
         if self.model == 'RF':
@@ -147,7 +148,7 @@ class ExpModel:
             self.splits = []
             for train_index, test_index in kf.split(X):
                 self.splits.append((train_index, test_index))
-            self.fold = 0
+            # self.fold = 0
 
     def has_next_fold(self):
         return self.fold < len(self.splits)

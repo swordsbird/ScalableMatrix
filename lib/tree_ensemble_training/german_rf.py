@@ -5,7 +5,6 @@ from sklearn.pipeline import Pipeline
 from lightgbm import LGBMClassifier
 
 from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_breast_cancer, load_iris
 
 import numpy as np
 import os
@@ -19,15 +18,6 @@ def get_model():
     random_state = 190
     target = 'credit_risk'
     #random_state = 24
-    parameters = {
-        'random_state': random_state,
-        'max_depth': 12,
-        'n_estimators': 150,
-        'max_leaf_nodes': 100,
-        'min_samples_split': 10,
-        'min_samples_leaf': 5,
-        'bootstrap': True,
-    }
     data_table = pd.read_csv(os.path.join(project_path, 'data/german.csv'))
     qualitative_features = [
         'credit_history', 'purpose', 'other_debtors', 
@@ -59,11 +49,11 @@ def get_model():
 
     parameters = {
         'n_estimators': 200,
-        'max_depth': 20,
+        'max_depth': 12,
         'random_state': random_state,
         'max_features': 'auto',
         'oob_score': True,
-        'min_samples_split': 20,
+        'min_samples_split': 15,
         'min_samples_leaf': 8,
     }
     # Test 0.8425938204482164
@@ -82,7 +72,7 @@ def get_model():
     print('Train')
     print('Accuracy Score is', accuracy_score(y_train, y_pred))
 
-    return clf, (X_train,y_train, X_test, y_test), 'german', 'rf', parameters
+    return clf, (X_train,y_train, X_test, y_test, data_table), 'german', 'rf', parameters
 
 if __name__ == '__main__':
     get_model()

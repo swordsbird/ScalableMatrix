@@ -13,7 +13,9 @@ class DetectorEnsemble:
     def __init__(self, mode = 'iforest', adjust_sample_weight = 0.01):
         self.detectors = []
 
-        if mode == 'iforest':
+        if mode == 'fast':
+            self.detectors.append(('iforest1', IsolationForest(random_state = 0, max_samples = 128, n_estimators = 100)))
+        elif mode == 'iforest':
             self.detectors.append(('iforest1', IsolationForest(random_state = 0, max_samples = 128, n_estimators = 100)))
             self.detectors.append(('iforest2', IsolationForest(random_state = 0, max_samples = 128, n_estimators = 200)))
             self.detectors.append(('iforest3', IsolationForest(random_state = 0, max_samples = 256, n_estimators = 100)))

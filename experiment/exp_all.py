@@ -220,8 +220,8 @@ num_of_rules = [50, 100, 200, 400, 800, 1600]
 tau_of_rules = [1, 1, 1.5, 1.75, 2.0, 2.5]
 exp_models = ['RF']
 #exp_datasets = ['german_credit', 'abalone', 'bankruptcy']
-exp_datasets = ['wine']
-#exp_datasets = ['abalone', 'diabetes', 'german_credit', 'wine', 'breast_cancer', 'bankruptcy']
+#exp_datasets = ['wine']
+exp_datasets = ['abalone', 'diabetes', 'german_credit', 'wine', 'breast_cancer', 'bankruptcy']
 exp_enable_oversampling = {
     'breast_cancer': True,
     'diabetes': True,

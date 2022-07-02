@@ -141,11 +141,7 @@ class Extractor:
             var.append(pulp.LpVariable(f'z{i}', cat=pulp.LpContinuous, lowBound=0, upBound=1))
         for i in range(N):
             var.append(pulp.LpVariable(f'k{i}', cat=pulp.LpContinuous, lowBound=0))
-        first_term = pulp.LpVariable('first', cat=pulp.LpContinuous, lowBound=0)
-        second_term = pulp.LpVariable('second', cat=pulp.LpContinuous, lowBound=0)
-        m.setObjective(first_term + second_term)
-        m += (pulp.lpSum([var[j + M] for j in range(N)]) >= first_term)
-        m += (pulp.lpSum([var[j] * score[j] * lambda_ for j in range(M)]) >= second_term)
+        m.setObjective(pulp.lpSum([var[j + M] for j in range(N)] + [var[j] * score[j] * lambda_ for j in range(M)]))
         m += (pulp.lpSum([var[j] for j in range(M)]) <= n_rules)
         for j in range(N):
             m += (var[j + M] <= zero + pulp.lpSum([var[k] * y[k][j] for k in range(M)]))
@@ -160,4 +156,4 @@ class Extractor:
         for k in np.argsort(z)[:-n_rules]:
             z[k] = 0
         z = z / np.sum(z)
-        return z, (pulp.value(m.objective) - zero * N, first_term.value() - zero * N, second_term.value())
+        return z, (pulp.value(m.objective) - zero * N, 0, 0)
