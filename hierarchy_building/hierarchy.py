@@ -1,25 +1,23 @@
-from sklearn.model_selection import train_test_split, KFold
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-import pandas as pd
 import numpy as np
-from imblearn.over_sampling import SMOTE
 import sys
 sys.path.append('..')
-from lib.tree_extractor import path_extractor
+from lib.model_utils import ModelUtil
 from lib.model_reduction_variant import Extractor
-from lib.exp_model import ExpModel
-from lib.tree_extractor import assign_samples
+from lib.anomaly_detection import LOCIMatrix
 import pickle
 
 def generate_model_paths(dataset, model_name, k_fold = 0):
-    model = ExpModel(dataset, model_name, k_fold)
-    model.init()
-    model.train()
-    paths = model.generate_paths()
-    assign_samples(paths, (model.X, model.y))
-    paths = [p for p in paths if p['coverage'] > 0]
-    return model, paths
+    model = ModelUtil(data_name = dataset, model_name = model_name)
+    paths = model.paths
+    mat = model.get_cover_matrix(model.X, fuzzy = True)
+    res = LOCIMatrix(mat, alpha = 0.8, metric = 'euclidean')
+    res.run()
+    res.select_indice(11.5)
+    score = (res.outlier_score > 0) * res.outlier_score
+    for i, val in enumerate(score):
+        model.paths[i]['score'] = val
+        model.paths[i]['cost'] = val
+    return model
 
 def param_xi_search(model, paths, min_value, max_value, step, n = 80):
     alpha = model.parameters['n_estimators'] * n / len(paths)
@@ -85,19 +83,22 @@ def generate_hierarchy(dataset, model_name, n = 80, n_fold = 4):
     model, paths = generate_model_paths(dataset, model_name)
     lambda_ = param_lambda_search(model, paths, 0.1, 50, 1, xi, n)
     '''
-    model, paths = generate_model_paths(dataset, model_name)
-    xi = 0.425
-    lambda_ = 8
+    model = generate_model_paths(dataset, model_name)
+    paths = model.paths
+    xi = 0.5
+    lambda_ = .6
     alpha = model.parameters['n_estimators'] * n / len(paths)
     print('xi', xi)
     print('lambda', lambda_)
     ex = Extractor(paths, model.X_train, model.clf.predict(model.X_train))
-    w, _, fidelity_train, result = ex.extract(n, xi * alpha, lambda_)
+    w, _, fidelity_train, obj = ex.extract(n, xi * alpha, lambda_)
     [idx] = np.nonzero(w)
 
     accuracy_test = ex.evaluate(w, model.X_test, model.y_test)
     fidelity_test = ex.evaluate(w, model.X_test, model.clf.predict(model.X_test))
 
+    model.accuracy = accuracy_test
+    model.fidelity = fidelity_test
     level_info = {
         'fidelity_test': fidelity_test,
         'accuracy_test': accuracy_test,
@@ -231,7 +232,7 @@ def post_process(dataset, model, paths, level_info, selected_idx):
             'features': features,
             'selected': [paths[i]['name'] for i in idx],
             'model_info': {
-                'accuracy': model._accuracy[-1],
+                'accuracy': model.accuracy,
                 'info': level_info,
                 'num_of_rules': len(paths),
                 'dataset': 'German Credit',
@@ -246,4 +247,4 @@ model, paths, level_info, idx = generate_hierarchy(dataset, model_name)
 data = post_process(dataset, model, paths, level_info, idx)
 
 import pickle
-pickle.dump(data, open('../output/german_0608.pkl', 'wb'))
+pickle.dump(data, open('../output/german_0707.pkl', 'wb'))

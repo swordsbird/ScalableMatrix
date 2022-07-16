@@ -2,21 +2,15 @@
 import pulp
 import numpy as np
 from copy import deepcopy
-from .anomaly_detection import DetectorEnsemble
 import time
 
 class Extractor:
     def __init__(self, paths, X_train, y_train):
-        # n_samples = 2000
-        # if len(y_train) > n_samples:
-        #    idxes = random.sample(range(len(y_train)), n_samples)
-        #    X_train = X_train[idxes]
-        #    y_train = y_train[idxes]
         self.X_raw = X_train
         self.y_raw = y_train
         self.paths = paths
         self.mat = self.getMat(self.X_raw, self.y_raw, self.paths)
-        self.weight = self.getWeight(self.mat)
+        self.weight = np.array([p['cost'] for p in paths])
 
     def compute_accuracy_on_train(self, paths):
         y_pred = self.predict(self.X_raw, paths)
@@ -80,14 +74,6 @@ class Extractor:
         for key in m:
             ans = ans * (X[:, int(key)] >= m[key][0]) * (X[:, int(key)] < m[key][1])
         return ans
-
-    def getWeight(self, mat):
-        path_mat = np.abs(mat)
-        ensemble = DetectorEnsemble(mode = 'fast')
-        ensemble.fit(path_mat)
-        YW = np.array([x for x in ensemble.weighted_score()])
-        self.YW = YW
-        return self.YW
 
     def extract(self, n_rules, tau, lambda_, method = 'maximize'):
         mat = self.mat
@@ -156,4 +142,4 @@ class Extractor:
         for k in np.argsort(z)[:-n_rules]:
             z[k] = 0
         z = z / np.sum(z)
-        return z, (pulp.value(m.objective) - zero * N, 0, 0)
+        return z, pulp.value(m.objective) - zero * N

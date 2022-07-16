@@ -5,14 +5,11 @@ from sklearn.pipeline import Pipeline
 from lightgbm import LGBMClassifier
 
 from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_breast_cancer, load_iris
 
 import numpy as np
 import os
 from sklearn.metrics import accuracy_score, precision_score, f1_score
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from imblearn.over_sampling import SMOTE
 
 random_state = 10
 

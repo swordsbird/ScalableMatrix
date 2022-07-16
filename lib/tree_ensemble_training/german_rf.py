@@ -13,7 +13,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from imblearn.over_sampling import SMOTE
 
-def get_model():
+def get_model(parameters = None):
     project_path = '/home/lizhen/projects/extree/exp'
     random_state = 190
     target = 'credit_risk'
@@ -47,15 +47,16 @@ def get_model():
     sm = SMOTE(random_state=random_state)
     X_train, y_train = sm.fit_resample(X_train, y_train)
 
-    parameters = {
-        'n_estimators': 200,
-        'max_depth': 12,
-        'random_state': random_state,
-        'max_features': 'auto',
-        'oob_score': True,
-        'min_samples_split': 15,
-        'min_samples_leaf': 8,
-    }
+    if parameters == None:
+        parameters = {
+            'n_estimators': 200,
+            'max_depth': 12,
+            'random_state': random_state,
+            'max_features': 'auto',
+            'oob_score': True,
+            'min_samples_split': 15,
+            'min_samples_leaf': 8,
+        }
     # Test 0.8425938204482164
     # Train 0.9906159910572454
     clf = RandomForestClassifier(**parameters)

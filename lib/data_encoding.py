@@ -2,8 +2,8 @@ german_credit_encoding = {
     'credit_risk' : ['No', 'Yes'], 
     'credit_history' : [
         "delay in paying off in the past",
-        "critical account/other credits elsewhere",
-        "no credits taken/all credits paid back duly",
+        "critical account/other credits elsewhere", #(not at this bank) 
+        "no credits taken/all credits paid back duly", #(not at this bank) 
         "existing credits paid back duly till now",
         "all credits at this bank paid back duly",
     ],
@@ -60,12 +60,7 @@ german_credit_encoding = {
     ],
     'other_installment_plans': ['bank', 'stores', 'none'],
     'housing': ["rent", "own", "for free"],
-    'job': [
-        'unemployed/ unskilled - non-resident',
-        'unskilled - resident',
-        'skilled employee / official',
-        'management/ self-employed/ highly qualified employee/ officer'
-    ],
+    'job': ['unemployed, unskilled and non-resident', 'unskilled and resident', 'skilled', 'highly skilled'],
     'status': [
         "no checking account",
         "... < 0 DM",
@@ -75,3 +70,12 @@ german_credit_encoding = {
     'telephone': ['No', 'Yes'],
     'foreign_worker': ['No', 'Yes'],
 }
+
+'''
+    'job': [
+        'unemployed/ unskilled - non-resident',
+        'unskilled - resident',
+        'skilled employee / official',
+        'management/ self-employed/ highly qualified employee/ officer'
+    ],
+'''

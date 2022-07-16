@@ -17,58 +17,103 @@ import math
 
 from typing import Union
 
-
-def run_loci(data: np.ndarray, alpha: float = 0.5, k: int = 3):
-    """Run the LOCI algorithm on the specified dataset.
-    Runs the LOCI algorithm for the specified datset with the specified
-    parameters, returns a LOCI object, from which outlier indices can
-    be accessed via the indice property.
-    Parameters
-    ----------
-    data: np.ndarray
-        Shape - [number of datapoints, number of dimensions]
-    alpha: float, optional
-        Default is 0.5 as per the paper. See the paper for full details.
-    k: int, optional
-        Default is 3 as per the paper. See the paper for full details.
-    """
-    loci_i = LOCIMatrix(data, alpha, k)
-    loci_i.run()
-    return loci_i
-
-
-
-class LOCIMatrix():
-    """
-    data: np.ndarray
-    alpha: float, optional
-    k: int, optional
-    See the loci function for more details on the parameters.
-    Attributes
-    ----------
-    _data: np.ndarray
-    _alpha: float
-    _k: int
-    max_dist: float
-    n_points: int
-    indice: np.ndarray
-    _dist_matrix: np.ndarray
-        The distance matrix, has shape [n_data_points, n_data_points]
-    """
-
-    def __init__(self, data: np.ndarray, alpha: float = 0.85, k: int = 3):
+class LOCIMatrixNew():
+    ''' the inner radius is fixed, and the outer radius is variable. '''
+    def __init__(self, data: np.ndarray, output = None, output_alpha = 0.5, r = 10, metric = 'euclidean', n_ticks = 100):
         self.data = data
-        self.alpha = alpha
-        self.k = k
-
-        self.max_dist = None
+        self.r = r
         self.n_points = self.data.shape[0]
         self.indice = None
-        self.dist_matrix = pairwise_distances(X = self.data, metric='cosine')
+        self.dist_matrix = pairwise_distances(X = self.data, metric=metric)
+        if output is not None:
+            output_dist = np.array([output[i] != output for i in range(self.n_points)])
+            max_dist = self.dist_matrix.max()
+            self.dist_matrix /= max_dist
+            self.dist_matrix = self.dist_matrix * (1 - output_alpha) + output_dist * output_alpha
         self.sorted_neighbors = np.argsort(self.dist_matrix, axis=1)
         self.sorted_dist = np.sort(self.dist_matrix, axis=1)
         self.outer_ptr = np.zeros(self.n_points).astype(int)
         self.inner_ptr = np.zeros(self.n_points).astype(int)
+        self.n_ticks = n_ticks
+
+    def update_outer_pointer(self, r, fast = False):
+        ptr = self.outer_ptr
+        for i in range(self.n_points):
+            if fast:
+                ptr[i] = np.searchsorted(self.sorted_dist[i], r, side='right')
+            else:
+                while ptr[i] < self.n_points and self.sorted_dist[i, ptr[i]] <= r:
+                    ptr[i] += 1
+
+    def update_inner_pointer(self, r, fast = False):
+        ptr = self.inner_ptr
+        for i in range(self.n_points):
+            while ptr[i] < self.n_points and self.sorted_dist[i, ptr[i]] <= r:
+                ptr[i] += 1
+
+    def check_consistency(self, r, outputs):
+        ret = []
+        self.outer_ptr = np.zeros(self.n_points).astype(int)
+        self.update_outer_pointer(r, fast=True)
+        outputs = np.array(outputs)
+        for p_ix in range(self.n_points):
+            neighbors = self._get_sampling_N(p_ix)
+            total = len(neighbors)
+            count = np.sum(outputs[neighbors] == outputs[p_ix])
+            ret.append(1.0 * count / total)
+        return ret
+
+    def run(self):
+        """Executes the LOCI algorithm"""
+        r_max = self.sorted_dist.max()
+        r_min = self.r
+        self.rs = []
+        self.scores = [[] for _ in range(self.n_points)]
+        print('r range: %.3f - %.3f' % (r_min, r_max))
+
+        for i in range(self.n_ticks):
+            r = i / self.n_ticks * (r_max - r_min) + r_min
+            self.rs.append(r)
+            self.update_outer_pointer(self.r)
+            self.update_inner_pointer(r)
+            for p_ix in range(self.n_points):
+                neighbors = self._get_sampling_N(p_ix)
+                n_values = self._get_alpha_n(neighbors)
+                cur_alpha_n = self._get_alpha_n(p_ix)
+
+                n_hat = np.mean(n_values)
+                mdef = 1 - (cur_alpha_n / n_hat)
+                sigma_mdef = np.std(n_values) / n_hat
+                score = 0
+                if len(neighbors) >= 20:
+                    if sigma_mdef > 0:
+                        score = mdef / sigma_mdef
+                self.scores[p_ix].append(score)
+
+        self.indice = np.array([self.n_ticks // 10 for _ in range(self.n_points)])
+        self.scores = np.array(self.scores)
+        self.outlier_score = np.array([self.scores[i, self.indice[i]] for i in range(self.n_points)])
+        return True
+
+    def _get_sampling_N(self, p_ix: int):
+        return self.sorted_neighbors[p_ix][:self.outer_ptr[p_ix]]
+
+    def _get_alpha_n(self, indices: Union[int, np.ndarray]):
+        return self.inner_ptr[indices]
+
+class LOCIMatrix():
+    def __init__(self, data: np.ndarray, alpha: float = 0.5, metric = 'euclidean', n_ticks = 100):
+        self.data = data
+        self.alpha = alpha
+
+        self.n_points = self.data.shape[0]
+        self.indice = None
+        self.dist_matrix = pairwise_distances(X = self.data, metric=metric)
+        self.sorted_neighbors = np.argsort(self.dist_matrix, axis=1)
+        self.sorted_dist = np.sort(self.dist_matrix, axis=1)
+        self.outer_ptr = np.zeros(self.n_points).astype(int)
+        self.inner_ptr = np.zeros(self.n_points).astype(int)
+        self.n_ticks = n_ticks
 
     def update_outer_pointer(self, r):
         ptr = self.outer_ptr
@@ -90,16 +135,14 @@ class LOCIMatrix():
                 'records': [],
             })
         sqrt_n = int(math.sqrt(self.n_points))
-        self.alpha = self.sorted_dist[:, 20].mean() / self.sorted_dist[:, int(math.sqrt(self.n_points))].mean()
         r_max = self.sorted_dist[:, sqrt_n].max() / self.alpha
         r_min = self.sorted_dist[:, 10].min()
         self.rs = []
         self.scores = [[] for _ in range(self.n_points)]
         print('r range: %.3f - %.3f, alpha: %.3f' % (r_min, r_max, self.alpha))
 
-        n_steps = 250
-        for i in range(n_steps):
-            r = i / n_steps * (r_max - r_min) + r_min
+        for i in range(self.n_ticks):
+            r = i / self.n_ticks * (r_max - r_min) + r_min
             self.rs.append(r)
             self.update_outer_pointer(r)
             self.update_inner_pointer(self.alpha * r)
@@ -115,17 +158,26 @@ class LOCIMatrix():
 
                 score = 0
                 if len(neighbors) >= 20:
-                    score = mdef / sigma_mdef
+                    if sigma_mdef > 0:
+                        score = mdef / sigma_mdef
                 self.scores[p_ix].append(score)
 
-        step = (r_max - r_min) / n_steps
+        step = (r_max - r_min) / self.n_ticks
         r = self.sorted_dist[:, int(math.sqrt(self.n_points))].mean()
         self.indice = np.array([int((self.sorted_dist[i, sqrt_n] - r_min) / step) for i in range(self.n_points)])
-        self.min_indice = np.array([self.scores[i].argmin() for i in range(self.n_points)])
-        self.max_indice = np.array([self.scores[i].argmax() for i in range(self.n_points)])
-        self.outlier_score = np.array([self.scores[i, self.indice[i]] for i in range(self.n_points)])
+        self.min_indice = np.array([np.argmin(self.scores[i]) for i in range(self.n_points)])
+        self.max_indice = np.array([np.argmax(self.scores[i]) for i in range(self.n_points)])
         self.scores = np.array(self.scores)
+        self.outlier_score = np.array([self.scores[i, self.indice[i]] for i in range(self.n_points)])
         return True
+
+    def select_indice(self, target):
+        target /= self.alpha
+        for i, r in enumerate(self.rs):
+            if r > target:
+                self.indice = np.array([i for _ in range(self.n_points)])
+                self.outlier_score = np.array([self.scores[i, self.indice[i]] for i in range(self.n_points)])
+                break
 
     def label_propagation(self, x, label, thres = 0.10):
         conf = {}
