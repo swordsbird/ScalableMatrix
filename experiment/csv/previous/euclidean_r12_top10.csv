@@ -1,0 +1,26 @@
+0,#1018,IF,status,is not,no checking account and ... < 0 DM,AND,employment_duration,is,4 to 7 yrs or >= 7 yrs,AND,other_installment_plans,is not,bank,AND,housing,is not,own,THEN,accept,42,0.928571,1
+
+1,#4782,IF,purpose,is not,others,AND,personal_status_sex,is,married male,AND,duration,<=,31,AND,property,is not,car or other,AND,
+,,,other_debtors,is not,guarantor,AND,amount,<=,1908,...,...,...,...,...,...,...,...,THEN,accept,74,0.877193,1
+
+2,#4919,IF,housing,is not,own,AND,amount,>=,9790,...,...,...,...,...,...,...,...,THEN,reject,18,0.789474,0
+
+3,#9538,IF,installment_rate,is not,< 20 and 20 to 25,AND,other_installment_plans,is not,none,AND,number_credits,is not,2 to 3,...,...,...,...,THEN,accept,71,0.549020,1
+
+4,#907,IF,property,is,building soc. savings agr./life insurance,AND,duration,<=,25,AND,other_installment_plans,is not,bank,AND,amount,in,2163 to 4471,AND,
+,,,status,is not,no checking account,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept,31,0.913043,1
+
+5,#4132,IF,duration,>=,15,AND,purpose,is not,car (used),AND,property,is not,unknown / no property,AND,amount,>=,1951,AND,
+,,,employment_duration,is,4 to 7 yrs or >= 7 yrs,AND,status,is not,... >= 200 DM (salary),AND,installment_rate,is not,< 20 and 20 to 25,...,...,...,...,THEN,accept,33,0.850000,1
+
+6,#8573,IF,job,is not,skilled employee / official,AND,purpose,is not,car (new),AND,property,is not,unknown / no property,AND,other_debtors,is not,guarantor,AND,
+,,,employment_duration,is,4 to 7 yrs or >= 7 yrs,AND,age,<=,40,...,...,...,...,...,...,...,...,THEN,accept,50,0.888889,1
+
+7,#7878,IF,status,is not,... >= 200 DM (salary),AND,purpose,is not,others and furniture/equipment and repairs,AND,savings,is not,>= 1000 DM,AND,amount,in,3480 to 3959,AND,
+,,,age,>=,27,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept,13,0.916667,1
+
+8,#8681,IF,duration,>=,9,AND,installment_rate,is not,< 20 and 20 to 25,AND,purpose,is not,furniture/equipment,AND,present_residence,is,< 1 yr,AND,
+,,,property,is not,real estate,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept,27,0.695652,1
+
+9,#2015,IF,property,is,building soc. savings agr./life insurance,AND,amount,in,2033 to 3483,AND,other_installment_plans,is,none,AND,installment_rate,is not,< 20 and 20 to 25,THEN,accept,24,0.555556,1
+

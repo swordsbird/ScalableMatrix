@@ -1,0 +1,237 @@
+0,IF,property,is not,real estate,AND,telephone,is not,No,AND,employment_duration,is not,4 <= ... < 7 yrs,AND,installment_rate,is not,20 <= ... < 25,AND,
+,,duration,in,-1 ~ 30,AND,credit_history,is not,critical account/other credits elsewhere,AND,amount,in,3343 ~ 18424,AND,number_credits,is not,4~5,AND,
+,,age,in,34 ~ 75,AND,status,is not,no checking account,,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.4226 score: 0.4815 rank: 164,IF,employment_duration,is not,4 <= ... < 7 yrs,AND,personal_status_sex,is,,AND,property,is not,real estate,AND,housing,is,own,AND,
+,,credit_history,is,no credits taken/all credits paid back duly,AND,people_liable,is not,3 or more,AND,savings,is not,unknown/no savings account,AND,number_credits,is,2~3,,THEN,reject
+
+dist: 0.4226 score: 0.4815 rank: 165,IF,employment_duration,is,< 1 yr,AND,property,is not,real estate,AND,status,is not,no checking account,AND,number_credits,is not,1,AND,
+,,credit_history,is,no credits taken/all credits paid back duly,AND,present_residence,is not,>= 7 yrs,AND,telephone,is not,No,,...,...,...,...,THEN,reject
+
+dist: 0.5286 score: 0.3583 rank: 404,IF,personal_status_sex,is,,AND,status,is,... >= 200 DM / salary for at least 1 year,AND,duration,in,-1 ~ 25,AND,purpose,is not,retraining,AND,
+,,property,is not,real estate,AND,age,in,40 ~ 53,AND,telephone,is not,No,,...,...,...,...,THEN,accept
+
+dist: 0.5918 score: 0.5657 rank: 33,IF,personal_status_sex,is,not married male or married male,AND,credit_history,is not,delay in paying off in the past,AND,duration,in,15 ~ 72,AND,status,is,... < 0 DM,AND,
+,,purpose,is not,retraining,AND,property,is,building soc. savings agr./life insurance,AND,telephone,is not,No,,...,...,...,...,THEN,accept
+
+1,IF,credit_history,is not,all credits at this bank paid back duly,AND,number_credits,is not,2~3,AND,property,is,unknown / no property,AND,installment_rate,is,>= 35,AND,
+,,present_residence,is not,< 1 yr,AND,housing,is not,for free,AND,status,is,... >= 200 DM / salary for at least 1 year,,...,...,...,...,THEN,accept
+
+dist: 0.5918 score: 0.3469 rank: 649,IF,amount,in,-1 ~ 3909,AND,telephone,is not,No,AND,purpose,is,car (used),AND,job,is not,management/ self-employed/ highly qualified employee/ officer,AND,
+,,property,is,unknown / no property,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.6078 score: 0.3016 rank: 3963,IF,personal_status_sex,is,not married male or married male,AND,other_installment_plans,is,none,AND,duration,in,-1 ~ 33,AND,status,is not,no checking account,AND,
+,,property,is,unknown / no property,AND,number_credits,is not,2~3,AND,employment_duration,is not,1 <= ... < 4 yrs,,...,...,...,...,THEN,accept
+
+dist: 0.6464 score: 0.3236 rank: 1869,IF,credit_history,is not,delay in paying off in the past,AND,installment_rate,is,>= 35,AND,housing,is,own,AND,savings,is not,unknown/no savings account,AND,
+,,property,is,unknown / no property,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.6570 score: 0.2761 rank: 6652,IF,credit_history,is not,all credits at this bank paid back duly,AND,other_installment_plans,is not,bank,AND,other_debtors,is not,co-applicant,AND,duration,in,11 ~ 72,AND,
+,,personal_status_sex,is,not married male or married male,AND,age,in,-1 ~ 50,AND,status,is,... >= 200 DM / salary for at least 1 year,AND,employment_duration,is not,1 <= ... < 4 yrs,AND,
+,,property,is not,car or other,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept
+
+2,IF,duration,in,12 ~ 14,AND,job,is,skilled employee / official,AND,number_credits,is,1,,...,...,...,...,THEN,accept
+
+dist: 0.5918 score: 0.5522 rank: 54,IF,housing,is not,rent,AND,other_installment_plans,is,none,AND,credit_history,is not,all credits at this bank paid back duly,AND,status,is,no checking account,AND,
+,,other_debtors,is not,guarantor,AND,property,is not,building soc. savings agr./life insurance,AND,installment_rate,is not,25 <= ... < 35,AND,savings,is,unknown/no savings account or ... <  100 DM or 100 <= ... <  500 DM,AND,
+,,telephone,is not,Yes,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.5918 score: 0.5398 rank: 79,IF,employment_duration,is not,< 1 yr,AND,duration,in,12 ~ 17,AND,status,is not,... >= 200 DM / salary for at least 1 year,AND,purpose,is not,car (new),AND,
+,,personal_status_sex,is,,AND,savings,is not,... >= 1000 DM,AND,property,is not,building soc. savings agr./life insurance,AND,amount,in,-1 ~ 2007,,THEN,accept
+
+dist: 0.6151 score: 0.3431 rank: 759,IF,credit_history,is not,all credits at this bank paid back duly,AND,employment_duration,is not,< 1 yr,AND,savings,is,unknown/no savings account or ... <  100 DM,AND,present_residence,is,>= 7 yrs,,THEN,accept
+
+dist: 0.6667 score: 0.5531 rank: 53,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,employment_duration,is not,4 <= ... < 7 yrs,AND,purpose,is not,furniture/equipment,AND,housing,is not,own,AND,
+,,present_residence,is,>= 7 yrs,AND,property,is not,building soc. savings agr./life insurance,AND,age,in,-1 ~ 34,,...,...,...,...,THEN,accept
+
+3,IF,property,is,unknown / no property,AND,status,is not,no checking account,AND,personal_status_sex,is,not married male or married male,AND,installment_rate,is not,< 20,AND,
+,,telephone,is not,Yes,AND,housing,is,own,AND,present_residence,is,1 <= ... < 4 yrs,,...,...,...,...,THEN,accept
+
+dist: 0.5528 score: 0.3286 rank: 1507,IF,property,is,unknown / no property,AND,status,is not,no checking account,AND,housing,is,own,AND,other_installment_plans,is,none,AND,
+,,age,in,-1 ~ 37,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.6220 score: 0.3135 rank: 2722,IF,housing,is not,rent,AND,employment_duration,is not,< 1 yr,AND,status,is not,no checking account,AND,property,is,unknown / no property,AND,
+,,job,is not,management/ self-employed/ highly qualified employee/ officer,AND,amount,in,-1 ~ 6167,AND,present_residence,is not,>= 7 yrs,,...,...,...,...,THEN,accept
+
+dist: 0.6349 score: 0.3018 rank: 3934,IF,job,is,skilled employee / official,AND,property,is,unknown / no property,AND,housing,is not,for free,AND,telephone,is not,Yes,,THEN,accept
+
+dist: 0.6464 score: 0.2881 rank: 5386,IF,status,is not,no checking account,AND,other_installment_plans,is not,bank,AND,telephone,is not,Yes,AND,housing,is not,rent,AND,
+,,duration,in,-1 ~ 37,AND,purpose,is not,car (used),AND,amount,in,-1 ~ 3615,AND,property,is,unknown / no property,,THEN,accept
+
+4,IF,property,is not,real estate,AND,number_credits,is not,2~3,AND,employment_duration,is not,>= 7 yrs,AND,other_installment_plans,is,bank,,THEN,accept
+
+dist: 0.4226 score: 0.4646 rank: 175,IF,personal_status_sex,is,,AND,number_credits,is not,2~3,AND,duration,in,11 ~ 72,AND,credit_history,is,no credits taken/all credits paid back duly,,THEN,reject
+
+dist: 0.4226 score: 0.4731 rank: 173,IF,status,is,no checking account,AND,number_credits,is not,1,AND,credit_history,is,delay in paying off in the past,,...,...,...,...,THEN,accept
+
+dist: 0.4226 score: 0.4646 rank: 174,IF,employment_duration,is,< 1 yr,AND,property,is not,real estate,AND,status,is not,no checking account,AND,number_credits,is not,1,AND,
+,,credit_history,is,no credits taken/all credits paid back duly,AND,present_residence,is,>= 7 yrs,,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.4836 score: 0.3916 rank: 193,IF,credit_history,is not,all credits at this bank paid back duly,AND,number_credits,is not,1,AND,status,is not,... >= 200 DM / salary for at least 1 year,,...,...,...,...,THEN,reject
+
+9,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,housing,is,own,AND,purpose,is not,furniture/equipment,AND,property,is not,real estate,AND,
+,,number_credits,is not,2~3,AND,employment_duration,is not,1 <= ... < 4 yrs,AND,present_residence,is not,< 1 yr,AND,other_installment_plans,is,bank,,THEN,reject
+
+dist: 0.4226 score: 0.4731 rank: 173,IF,status,is,no checking account,AND,number_credits,is not,1,AND,credit_history,is,delay in paying off in the past,,...,...,...,...,THEN,accept
+
+dist: 0.5918 score: 0.5441 rank: 68,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,purpose,is not,furniture/equipment,AND,present_residence,is not,< 1 yr,AND,other_debtors,is not,guarantor,AND,
+,,telephone,is not,Yes,AND,credit_history,is not,all credits at this bank paid back duly,AND,amount,in,7683 ~ 18424,,...,...,...,...,THEN,reject
+
+dist: 0.5918 score: 0.5311 rank: 102,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,job,is,skilled employee / official,AND,employment_duration,is not,>= 7 yrs,AND,present_residence,is not,< 1 yr,AND,
+,,installment_rate,is not,< 20,AND,credit_history,is,delay in paying off in the past,,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.6151 score: 0.3259 rank: 1700,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,credit_history,is not,all credits at this bank paid back duly,AND,other_debtors,is,none,AND,number_credits,is,1,AND,
+,,installment_rate,is not,20 <= ... < 25,AND,property,is not,real estate,AND,purpose,is,others,AND,employment_duration,is,>= 7 yrs,,THEN,reject
+
+13,IF,property,is not,real estate,AND,employment_duration,is not,< 1 yr,AND,installment_rate,is not,>= 35,AND,job,is not,management/ self-employed/ highly qualified employee/ officer,AND,
+,,telephone,is not,Yes,AND,present_residence,is not,>= 7 yrs,,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.5371 score: 0.2996 rank: 4181,IF,installment_rate,is not,>= 35,AND,credit_history,is not,all credits at this bank paid back duly,AND,number_credits,is not,2~3,AND,property,is not,real estate,AND,
+,,present_residence,is,4 <= ... < 7 yrs,AND,employment_duration,is not,4 <= ... < 7 yrs,,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.5636 score: 0.3244 rank: 1819,IF,property,is,car or other,AND,status,is not,... >= 200 DM / salary for at least 1 year,AND,duration,in,-1 ~ 30,AND,job,is not,management/ self-employed/ highly qualified employee/ officer,AND,
+,,telephone,is not,Yes,AND,employment_duration,is not,< 1 yr,AND,present_residence,is,4 <= ... < 7 yrs,,...,...,...,...,THEN,reject
+
+dist: 0.5636 score: 0.3353 rank: 1104,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,duration,in,14 ~ 72,AND,property,is,car or other,AND,present_residence,is,4 <= ... < 7 yrs,AND,
+,,employment_duration,is not,< 1 yr,AND,telephone,is not,Yes,,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.6518 score: 0.3210 rank: 2064,IF,other_installment_plans,is not,bank,AND,housing,is,own,AND,credit_history,is not,all credits at this bank paid back duly,AND,duration,in,12 ~ 72,AND,
+,,present_residence,is,4 <= ... < 7 yrs,AND,employment_duration,is not,4 <= ... < 7 yrs,AND,age,in,38 ~ 75,,...,...,...,...,THEN,reject
+
+14,IF,purpose,is not,furniture/equipment,AND,status,is not,... >= 200 DM / salary for at least 1 year,AND,job,is,unskilled - resident,AND,other_installment_plans,is not,none,,THEN,accept
+
+dist: 0.5286 score: 0.3199 rank: 2127,IF,other_installment_plans,is not,bank,AND,status,is not,... >= 200 DM / salary for at least 1 year,AND,amount,in,3960 ~ 18424,AND,installment_rate,is not,< 20,AND,
+,,credit_history,is not,existing credits paid back duly till now,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.5799 score: 0.2711 rank: 7176,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,job,is,unskilled - resident,AND,other_installment_plans,is not,none,AND,personal_status_sex,is,,,THEN,reject
+
+dist: 0.5918 score: 0.2741 rank: 6863,IF,duration,in,12 ~ 72,AND,status,is not,... < 0 DM,AND,savings,is,unknown/no savings account,AND,other_installment_plans,is,stores,,THEN,accept
+
+dist: 0.5918 score: 0.3151 rank: 2578,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,credit_history,is,all credits at this bank paid back duly,AND,property,is not,real estate,AND,housing,is not,own,AND,
+,,personal_status_sex,is,,AND,job,is,unskilled - resident,,...,...,...,...,...,...,...,...,THEN,reject
+
+18,IF,savings,is,unknown/no savings account or ... <  100 DM or 100 <= ... <  500 DM,AND,job,is,skilled employee / official,AND,employment_duration,is,< 1 yr,AND,people_liable,is not,3 or more,AND,
+,,present_residence,is,1 <= ... < 4 yrs,AND,purpose,is,car (used),,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.5918 score: 0.3286 rank: 1510,IF,personal_status_sex,is,,AND,credit_history,is not,all credits at this bank paid back duly,AND,people_liable,is not,3 or more,AND,employment_duration,is,< 1 yr,AND,
+,,job,is not,unskilled - resident,AND,purpose,is,car (used),AND,housing,is not,rent,,...,...,...,...,THEN,accept
+
+dist: 0.5918 score: 0.3205 rank: 2095,IF,status,is not,no checking account,AND,savings,is,unknown/no savings account or ... <  100 DM or 100 <= ... <  500 DM,AND,other_installment_plans,is not,bank,AND,employment_duration,is,< 1 yr,AND,
+,,duration,in,8 ~ 10,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.6349 score: 0.2937 rank: 4777,IF,purpose,is not,furniture/equipment,AND,credit_history,is not,all credits at this bank paid back duly,AND,personal_status_sex,is,,AND,status,is not,... >= 200 DM / salary for at least 1 year,AND,
+,,present_residence,is not,< 1 yr,AND,employment_duration,is,< 1 yr,,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.6349 score: 0.3135 rank: 2725,IF,duration,in,-1 ~ 12,AND,other_installment_plans,is,none,AND,age,in,-1 ~ 25,AND,purpose,is not,others,AND,
+,,telephone,is not,Yes,AND,present_residence,is,1 <= ... < 4 yrs,,...,...,...,...,...,...,...,...,THEN,accept
+
+21,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,job,is not,unskilled - resident,AND,housing,is not,own,AND,number_credits,is not,2~3,AND,
+,,employment_duration,is not,>= 7 yrs,AND,duration,in,18 ~ 72,AND,age,in,25 ~ 75,,...,...,...,...,THEN,reject
+
+dist: 0.4226 score: 0.4759 rank: 171,IF,property,is not,real estate,AND,telephone,is not,No,AND,employment_duration,is not,4 <= ... < 7 yrs,AND,installment_rate,is not,20 <= ... < 25,AND,
+,,duration,in,-1 ~ 30,AND,credit_history,is,critical account/other credits elsewhere,AND,housing,is,rent,,...,...,...,...,THEN,reject
+
+dist: 0.4836 score: 0.3656 rank: 313,IF,people_liable,is not,3 or more,AND,housing,is,rent,AND,employment_duration,is not,4 <= ... < 7 yrs,AND,credit_history,is not,all credits at this bank paid back duly,AND,
+,,amount,in,1969 ~ 18424,AND,installment_rate,is,>= 35,,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.5918 score: 0.2944 rank: 4701,IF,status,is not,... < 0 DM,AND,property,is not,real estate,AND,employment_duration,is not,< 1 yr,AND,credit_history,is not,delay in paying off in the past,AND,
+,,purpose,is not,car (used),AND,savings,is,unknown/no savings account,AND,installment_rate,is,>= 35,AND,housing,is,rent,,THEN,reject
+
+dist: 0.5918 score: 0.5313 rank: 101,IF,purpose,is not,furniture/equipment,AND,savings,is,unknown/no savings account or ... <  100 DM or 100 <= ... <  500 DM,AND,installment_rate,is not,< 20,AND,housing,is,rent,AND,
+,,employment_duration,is not,4 <= ... < 7 yrs,AND,foreign_worker,is not,Yes,AND,number_credits,is,1,AND,other_installment_plans,is not,none,,THEN,reject
+
+23,IF,savings,is,unknown/no savings account,AND,employment_duration,is,< 1 yr,AND,age,in,-1 ~ 44,AND,status,is not,0<= ... < 200 DM,AND,
+,,housing,is,own,AND,purpose,is not,car (used),AND,duration,in,-1 ~ 19,AND,installment_rate,is,>= 35,AND,
+,,job,is,unskilled - resident,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.5736 score: 0.2695 rank: 7325,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,property,is,real estate,AND,installment_rate,is not,25 <= ... < 35,AND,housing,is,own,AND,
+,,present_residence,is,< 1 yr,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.5918 score: 0.2729 rank: 7000,IF,housing,is,own,AND,employment_duration,is,< 1 yr,AND,age,in,-1 ~ 43,AND,present_residence,is,< 1 yr,AND,
+,,credit_history,is,no credits taken/all credits paid back duly,AND,job,is not,skilled employee / official,,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.6220 score: 0.2782 rank: 6424,IF,employment_duration,is,< 1 yr,AND,purpose,is not,car (new),AND,property,is,real estate,AND,telephone,is not,Yes,AND,
+,,installment_rate,is not,< 20,AND,present_residence,is not,>= 7 yrs,,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.6464 score: 0.3418 rank: 804,IF,housing,is not,rent,AND,job,is not,skilled employee / official,AND,installment_rate,is,>= 35,AND,number_credits,is,1,AND,
+,,other_installment_plans,is,bank,AND,purpose,is,furniture/equipment,,...,...,...,...,...,...,...,...,THEN,accept
+
+24,IF,property,is not,real estate,AND,employment_duration,is not,< 1 yr,AND,installment_rate,is not,>= 35,AND,job,is,management/ self-employed/ highly qualified employee/ officer,AND,
+,,status,is not,... >= 200 DM / salary for at least 1 year,AND,telephone,is not,Yes,,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.4226 score: 0.4758 rank: 172,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,credit_history,is not,delay in paying off in the past,AND,savings,is not,... >= 1000 DM,AND,number_credits,is not,1,AND,
+,,other_debtors,is,none,AND,employment_duration,is not,>= 7 yrs,AND,property,is,car or other,AND,job,is not,skilled employee / official,,THEN,reject
+
+dist: 0.4226 score: 0.4803 rank: 169,IF,telephone,is not,Yes,AND,housing,is not,own,AND,foreign_worker,is not,Yes,AND,employment_duration,is not,>= 7 yrs,AND,
+,,installment_rate,is not,< 20,AND,status,is not,... >= 200 DM / salary for at least 1 year,AND,property,is not,real estate,AND,age,in,-1 ~ 45,AND,
+,,job,is not,unskilled - resident,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.4836 score: 0.3438 rank: 733,IF,status,is not,no checking account,AND,other_installment_plans,is,none,AND,job,is,management/ self-employed/ highly qualified employee/ officer,AND,employment_duration,is,1 <= ... < 4 yrs,,THEN,reject
+
+dist: 0.5636 score: 0.3006 rank: 4060,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,housing,is not,own,AND,installment_rate,is not,>= 35,AND,amount,in,4016 ~ 18424,AND,
+,,telephone,is not,Yes,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept
+
+29,IF,status,is,... < 0 DM,AND,other_installment_plans,is,none,AND,amount,in,-1 ~ 10358,AND,property,is,car or other,AND,
+,,telephone,is not,Yes,AND,personal_status_sex,is,,AND,housing,is,own,AND,savings,is,unknown/no savings account,AND,
+,,age,in,28 ~ 75,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.4655 score: 0.3432 rank: 753,IF,personal_status_sex,is,,AND,status,is not,no checking account,AND,employment_duration,is not,< 1 yr,AND,job,is not,management/ self-employed/ highly qualified employee/ officer,AND,
+,,installment_rate,is,>= 35,AND,present_residence,is not,< 1 yr,AND,property,is,car or other,,...,...,...,...,THEN,accept
+
+dist: 0.5918 score: 0.5262 rank: 109,IF,property,is not,real estate,AND,employment_duration,is not,< 1 yr,AND,installment_rate,is,>= 35,AND,personal_status_sex,is,,AND,
+,,status,is not,... >= 200 DM / salary for at least 1 year,AND,purpose,is,car (used),,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.5918 score: 0.2782 rank: 6423,IF,property,is not,unknown / no property,AND,housing,is,own,AND,status,is not,... >= 200 DM / salary for at least 1 year,AND,installment_rate,is,>= 35,AND,
+,,present_residence,is,1 <= ... < 4 yrs,AND,telephone,is not,Yes,AND,amount,in,-1 ~ 1632,,...,...,...,...,THEN,accept
+
+dist: 0.5918 score: 0.5472 rank: 66,IF,property,is not,real estate,AND,housing,is,own,AND,employment_duration,is not,< 1 yr,AND,status,is,... < 0 DM,AND,
+,,installment_rate,is not,< 20,AND,present_residence,is not,>= 7 yrs,AND,purpose,is,furniture/equipment,AND,amount,in,-1 ~ 1353,,THEN,reject
+
+30,IF,duration,in,19 ~ 72,AND,credit_history,is not,all credits at this bank paid back duly,AND,property,is not,car or other,AND,telephone,is not,Yes,AND,
+,,personal_status_sex,is,not married male or married male,AND,savings,is not,... >= 1000 DM,AND,installment_rate,is,20 <= ... < 25,,...,...,...,...,THEN,accept
+
+dist: 0.5636 score: 0.3591 rank: 395,IF,property,is,real estate,AND,duration,in,16 ~ 72,AND,telephone,is not,Yes,AND,age,in,-1 ~ 31,AND,
+,,amount,in,-1 ~ 3284,AND,personal_status_sex,is,not married male or married male,,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.5918 score: 0.5572 rank: 45,IF,employment_duration,is not,< 1 yr,AND,amount,in,-1 ~ 4038,AND,duration,in,12 ~ 72,AND,personal_status_sex,is,not married male or married male,AND,
+,,savings,is,unknown/no savings account,AND,present_residence,is not,1 <= ... < 4 yrs,AND,job,is not,skilled employee / official,AND,telephone,is not,Yes,AND,
+,,installment_rate,is not,>= 35,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.6151 score: 0.2870 rank: 5514,IF,housing,is not,own,AND,telephone,is not,Yes,AND,installment_rate,is not,>= 35,AND,present_residence,is not,< 1 yr,AND,
+,,status,is,no checking account,AND,duration,in,16 ~ 72,AND,credit_history,is,no credits taken/all credits paid back duly,,...,...,...,...,THEN,accept
+
+dist: 0.6667 score: 0.6087 rank: 8,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,present_residence,is not,< 1 yr,AND,duration,in,18 ~ 72,AND,savings,is,unknown/no savings account or ... <  100 DM or 100 <= ... <  500 DM,AND,
+,,purpose,is not,car (new),AND,installment_rate,is,20 <= ... < 25,AND,other_debtors,is,none,AND,people_liable,is not,0 to 2,,THEN,reject
+
+31,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,installment_rate,is,>= 35,AND,age,in,23 ~ 30,AND,purpose,is not,car (new),AND,
+,,other_installment_plans,is,none,AND,employment_duration,is,>= 7 yrs,,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.5736 score: 0.3163 rank: 2470,IF,personal_status_sex,is,,AND,status,is not,... >= 200 DM / salary for at least 1 year,AND,property,is not,real estate,AND,employment_duration,is,>= 7 yrs,AND,
+,,job,is,skilled employee / official,AND,age,in,-1 ~ 34,,...,...,...,...,...,...,...,...,THEN,accept
+
+dist: 0.5918 score: 0.5400 rank: 78,IF,savings,is,unknown/no savings account,AND,credit_history,is not,all credits at this bank paid back duly,AND,installment_rate,is,>= 35,AND,other_debtors,is,none,AND,
+,,duration,in,11 ~ 12,AND,number_credits,is not,2~3,AND,present_residence,is not,< 1 yr,AND,status,is not,... >= 200 DM / salary for at least 1 year,AND,
+,,employment_duration,is,>= 7 yrs,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.6464 score: 0.3236 rank: 1868,IF,credit_history,is not,all credits at this bank paid back duly,AND,other_installment_plans,is not,bank,AND,other_debtors,is not,co-applicant,AND,duration,in,11 ~ 72,AND,
+,,personal_status_sex,is,,AND,installment_rate,is not,< 20,AND,status,is,no checking account,AND,amount,in,-1 ~ 1187,AND,
+,,employment_duration,is not,4 <= ... < 7 yrs,AND,property,is,building soc. savings agr./life insurance,,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.6464 score: 0.3512 rank: 540,IF,status,is,no checking account,AND,personal_status_sex,is,,AND,number_credits,is,1,AND,property,is not,car or other,AND,
+,,housing,is not,own,AND,purpose,is,repairs,,...,...,...,...,...,...,...,...,THEN,reject
+
+37,IF,credit_history,is not,all credits at this bank paid back duly,AND,number_credits,is,1,AND,status,is,no checking account,AND,employment_duration,is not,1 <= ... < 4 yrs,AND,
+,,other_installment_plans,is not,bank,AND,installment_rate,is,>= 35,,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.5000 score: 0.5500 rank: 60,IF,credit_history,is not,all credits at this bank paid back duly,AND,job,is not,management/ self-employed/ highly qualified employee/ officer,AND,status,is,no checking account,AND,other_installment_plans,is,none,AND,
+,,purpose,is,repairs,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.5000 score: 0.5254 rank: 110,IF,credit_history,is not,delay in paying off in the past,AND,installment_rate,is,>= 35,AND,housing,is not,own,AND,status,is not,... >= 200 DM / salary for at least 1 year,AND,
+,,present_residence,is not,4 <= ... < 7 yrs,AND,purpose,is not,furniture/equipment,,...,...,...,...,...,...,...,...,THEN,reject
+
+dist: 0.5286 score: 0.3360 rank: 1068,IF,status,is not,... >= 200 DM / salary for at least 1 year,AND,property,is not,real estate,AND,job,is,skilled employee / official,AND,duration,in,12 ~ 72,AND,
+,,employment_duration,is not,< 1 yr,AND,present_residence,is not,1 <= ... < 4 yrs,AND,people_liable,is not,0 to 2,,...,...,...,...,THEN,reject
+
+dist: 0.5528 score: 0.3248 rank: 1795,IF,status,is not,... < 0 DM,AND,property,is not,real estate,AND,employment_duration,is not,< 1 yr,AND,credit_history,is,delay in paying off in the past,AND,
+,,amount,in,-1 ~ 1104,,...,...,...,...,...,...,...,...,...,...,...,...,THEN,reject
+

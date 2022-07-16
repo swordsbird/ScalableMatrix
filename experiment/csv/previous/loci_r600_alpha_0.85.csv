@@ -1,0 +1,147 @@
+0,#3786,IF,status,is not,0 to 200 DM and ... >= 200 DM (salary),AND,savings,is,unknown/no savings account or < 100 DM,AND,purpose,is,car (used),AND,property,is not,real estate,AND,
+,,,job,is,skilled employee / official,AND,housing,is not,own,AND,telephone,is,Yes,...,...,...,...,THEN,accept,2,0.818182
+
+1,#4196,IF,property,is,unknown / no property,AND,credit_history,is not,critical account/other credits elsewhere,AND,housing,is not,for free,AND,people_liable,is,3 or more,AND,
+,,,other_debtors,is,none,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept,5,0.903226
+
+2,#8228,IF,purpose,is not,car (new) and car (used) and furniture/equipment,AND,personal_status_sex,is,not married male,AND,telephone,is,No,AND,present_residence,is not,< 1 yr,AND,
+,,,property,is not,real estate and car or other,AND,people_liable,is,0 to 2,AND,status,is not,0 to 200 DM and ... >= 200 DM (salary),AND,number_credits,is,2 to 3,THEN,reject,6,0.875000
+
+3,#8004,IF,amount,<=,3885,AND,housing,is,rent,AND,savings,is,unknown/no savings account or < 100 DM,AND,people_liable,is,0 to 2,AND,
+,,,purpose,is not,others and car (used) and furniture/equipment,AND,property,is not,unknown / no property,AND,job,is,skilled employee / official,...,...,...,...,THEN,accept,9,0.500000
+
+4,#5814,IF,credit_history,is,delay in paying off in the past or critical account/other credits elsewhere,AND,other_debtors,is not,guarantor,AND,telephone,is,No,AND,duration,>=,9,AND,
+,,,savings,is not,500 to 1000 DM and >= 1000 DM,AND,job,is not,skilled employee / official,AND,property,is,car or other,...,...,...,...,THEN,accept,3,0.928571
+
+5,#8180,IF,credit_history,is,delay in paying off in the past or existing credits paid back duly till now,AND,installment_rate,is not,< 20 and 20 to 25,AND,status,is not,no checking account and ... >= 200 DM (salary),AND,purpose,is not,retraining,AND,
+,,,number_credits,is not,2 to 3,AND,property,is,car or other,...,...,...,...,...,...,...,...,THEN,reject,2,1.000000
+
+6,#9068,IF,other_installment_plans,is,none,AND,employment_duration,is not,4 to 7 yrs and >= 7 yrs,AND,property,is not,real estate,AND,housing,is,own,AND,
+,,,personal_status_sex,is,married male,AND,credit_history,is not,all credits at this bank paid back duly,AND,purpose,is,furniture/equipment,...,...,...,...,THEN,accept,17,0.526316
+
+7,#7682,IF,property,is not,real estate,AND,housing,is,rent,AND,installment_rate,is not,25 to 35 and >= 35,AND,number_credits,is not,2 to 3,AND,
+,,,purpose,is,car (used),...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept,11,0.611111
+
+8,#5751,IF,telephone,is,No,AND,duration,>=,15,AND,credit_history,is not,all credits at this bank paid back duly,AND,housing,is not,own,AND,
+,,,installment_rate,is not,< 20 and 20 to 25,AND,purpose,is,repairs,...,...,...,...,...,...,...,...,THEN,reject,4,0.947368
+
+9,#8245,IF,purpose,is not,furniture/equipment,AND,personal_status_sex,is,married male,AND,credit_history,is not,delay in paying off in the past and critical account/other credits elsewhere,AND,savings,is,unknown/no savings account,AND,
+,,,job,is not,management/ self-employed/ highly qualified employee/ officer,AND,housing,is not,for free,AND,property,is,car or other,AND,number_credits,is not,2 to 3,THEN,reject,26,0.625000
+
+10,#8467,IF,housing,is,own,AND,other_installment_plans,is,bank,AND,credit_history,is not,critical account/other credits elsewhere,AND,employment_duration,is not,unemployed and < 1 yr,AND,
+,,,purpose,is,car (used),...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept,7,0.615385
+
+11,#7089,IF,savings,is,unknown/no savings account or < 100 DM,AND,telephone,is,No,AND,property,is not,building soc. savings agr./life insurance,AND,status,is,... >= 200 DM (salary),AND,
+,,,people_liable,is,3 or more,AND,housing,is,rent,...,...,...,...,...,...,...,...,THEN,accept,2,0.777778
+
+12,#5497,IF,savings,is,unknown/no savings account or < 100 DM,AND,telephone,is,No,AND,present_residence,is not,< 1 yr,AND,personal_status_sex,is,not married male,AND,
+,,,property,is,car or other,AND,purpose,is,furniture/equipment,...,...,...,...,...,...,...,...,THEN,accept,16,0.538462
+
+13,#8005,IF,amount,<=,3885,AND,housing,is,rent,AND,savings,is,unknown/no savings account or < 100 DM,AND,people_liable,is,0 to 2,AND,
+,,,purpose,is,furniture/equipment,AND,property,is not,unknown / no property,AND,job,is,skilled employee / official,...,...,...,...,THEN,reject,14,0.666667
+
+14,#7540,IF,employment_duration,is,unemployed or < 1 yr,AND,status,is not,... >= 200 DM (salary),AND,other_debtors,is,none,AND,housing,is not,for free,AND,
+,,,purpose,is,furniture/equipment,AND,amount,>=,1020,AND,telephone,is,No,AND,property,is,building soc. savings agr./life insurance,THEN,reject,4,0.928571
+
+15,#2223,IF,personal_status_sex,is,married male,AND,purpose,is,others,AND,credit_history,is,delay in paying off in the past,...,...,...,...,THEN,reject,3,0.916667
+
+16,#4844,IF,property,is not,unknown / no property,AND,job,is,management/ self-employed/ highly qualified employee/ officer,AND,other_debtors,is not,none,...,...,...,...,THEN,accept,5,0.916667
+
+17,#1222,IF,savings,is,unknown/no savings account or < 100 DM,AND,status,is not,no checking account and ... >= 200 DM (salary),AND,other_debtors,is not,guarantor,AND,housing,is,for free,AND,
+,,,job,is,skilled employee / official,AND,number_credits,is,1,AND,purpose,is,repairs,...,...,...,...,THEN,reject,3,1.000000
+
+18,#1421,IF,housing,is not,own,AND,savings,is not,>= 1000 DM,AND,status,is not,... >= 200 DM (salary),AND,property,is,car or other,AND,
+,,,job,is,management/ self-employed/ highly qualified employee/ officer,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept,6,0.692308
+
+19,#8996,IF,other_installment_plans,is,stores,AND,property,is not,real estate and car or other,AND,personal_status_sex,is,not married male,AND,duration,>=,12,AND,
+,,,telephone,is,No,...,...,...,...,...,...,...,...,...,...,...,...,THEN,reject,4,0.950000
+
+20,#4999,IF,other_debtors,is,none,AND,savings,is not,500 to 1000 DM and >= 1000 DM,AND,housing,is not,own,AND,number_credits,is not,2 to 3,AND,
+,,,credit_history,is not,all credits at this bank paid back duly,AND,job,is not,management/ self-employed/ highly qualified employee/ officer,AND,status,is,no checking account,AND,purpose,is not,others,AND,
+,,,age,>=,23,AND,property,is,building soc. savings agr./life insurance,...,...,...,...,...,...,...,...,THEN,reject,4,0.909091
+
+21,#3921,IF,property,is not,real estate,AND,personal_status_sex,is,not married male,AND,employment_duration,is not,4 to 7 yrs and >= 7 yrs,AND,purpose,is,furniture/equipment,AND,
+,,,telephone,is,No,AND,present_residence,is not,< 1 yr and 1 to 4 yrs,...,...,...,...,...,...,...,...,THEN,accept,12,0.500000
+
+22,#1331,IF,housing,is,own,AND,purpose,is not,car (used) and retraining,AND,job,is not,unskilled - resident and management/ self-employed/ highly qualified employee/ officer,AND,other_installment_plans,is,none,AND,
+,,,age,>=,30,AND,number_credits,is,1,AND,savings,is,unknown/no savings account,AND,present_residence,is,>= 7 yrs,THEN,accept,20,0.733333
+
+23,#554,IF,purpose,is not,furniture/equipment,AND,credit_history,is,existing credits paid back duly till now,AND,savings,is not,unknown/no savings account and >= 1000 DM,AND,property,is not,building soc. savings agr./life insurance,AND,
+,,,employment_duration,is,4 to 7 yrs or >= 7 yrs,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept,8,0.538462
+
+24,#3143,IF,credit_history,is not,all credits at this bank paid back duly,AND,personal_status_sex,is,not married male,AND,property,is not,real estate and building soc. savings agr./life insurance,AND,savings,is not,500 to 1000 DM and >= 1000 DM,AND,
+,,,telephone,is,No,AND,job,is,skilled employee / official,AND,age,>=,23,AND,present_residence,is,< 1 yr,THEN,accept,9,0.642857
+
+25,#2609,IF,telephone,is,Yes,AND,amount,<=,3939,AND,job,is not,skilled employee / official and management/ self-employed/ highly qualified employee/ officer,AND,purpose,is not,car (used),THEN,accept,20,0.800000
+
+26,#5290,IF,telephone,is,Yes,AND,savings,is,unknown/no savings account or < 100 DM,AND,purpose,is not,retraining,AND,property,is,real estate,THEN,accept,34,0.826087
+
+27,#2395,IF,housing,is not,for free,AND,credit_history,is,no credits taken/all credits paid back duly,AND,savings,is,unknown/no savings account or < 100 DM,AND,other_installment_plans,is not,bank,AND,
+,,,other_debtors,is not,guarantor,AND,job,is,skilled employee / official,AND,status,is not,... >= 200 DM (salary),AND,amount,>=,1550,AND,
+,,,purpose,is,furniture/equipment,AND,property,is,building soc. savings agr./life insurance,...,...,...,...,...,...,...,...,THEN,reject,2,1.000000
+
+28,#925,IF,telephone,is,No,AND,purpose,is not,furniture/equipment,AND,savings,is not,500 to 1000 DM and >= 1000 DM,AND,status,is not,... >= 200 DM (salary),AND,
+,,,foreign_worker,is,Yes,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept,11,0.583333
+
+29,#6820,IF,housing,is,rent,AND,status,is,... >= 200 DM (salary),AND,personal_status_sex,is,married male,AND,job,is,unskilled - resident,THEN,accept,6,0.777778
+
+30,#5069,IF,installment_rate,is not,< 20 and 20 to 25,AND,property,is not,real estate and unknown / no property,AND,other_installment_plans,is,none,AND,housing,is not,own,AND,
+,,,personal_status_sex,is,not married male,AND,purpose,is,furniture/equipment,AND,telephone,is,No,...,...,...,...,THEN,reject,2,1.000000
+
+31,#4419,IF,housing,is,own,AND,status,is not,... >= 200 DM (salary),AND,property,is not,real estate,AND,job,is,skilled employee / official,AND,
+,,,credit_history,is,no credits taken/all credits paid back duly,AND,purpose,is not,others,AND,telephone,is,Yes,AND,personal_status_sex,is,married male,THEN,accept,9,0.687500
+
+32,#4875,IF,telephone,is,No,AND,property,is not,real estate and unknown / no property,AND,installment_rate,is not,< 20,AND,housing,is not,own,AND,
+,,,employment_duration,is not,>= 7 yrs,AND,credit_history,is not,delay in paying off in the past,AND,personal_status_sex,is,not married male,AND,savings,is,unknown/no savings account,AND,
+,,,purpose,is,car (used),...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept,7,0.700000
+
+33,#2376,IF,housing,is,own,AND,other_installment_plans,is,bank,AND,purpose,is not,furniture/equipment,AND,property,is not,car or other,AND,
+,,,personal_status_sex,is,not married male,AND,job,is,unskilled - resident,...,...,...,...,...,...,...,...,THEN,reject,6,0.941176
+
+34,#6529,IF,installment_rate,is not,< 20 and 20 to 25,AND,property,is not,real estate and car or other,AND,credit_history,is not,no credits taken/all credits paid back duly and all credits at this bank paid back duly,AND,personal_status_sex,is,married male,AND,
+,,,job,is,unskilled - resident,...,...,...,...,...,...,...,...,...,...,...,...,THEN,reject,4,1.000000
+
+35,#8547,IF,other_installment_plans,is,none,AND,credit_history,is not,existing credits paid back duly till now,AND,status,is not,... >= 200 DM (salary),AND,telephone,is,Yes,AND,
+,,,housing,is not,for free,AND,job,is,unskilled - resident,...,...,...,...,...,...,...,...,THEN,accept,18,0.666667
+
+36,#6777,IF,status,is not,... >= 200 DM (salary),AND,purpose,is not,furniture/equipment,AND,job,is,skilled employee / official,AND,savings,is,< 100 DM or 100 to 500 DM,AND,
+,,,number_credits,is not,2 to 3,AND,credit_history,is,no credits taken/all credits paid back duly,AND,amount,<=,4038,AND,personal_status_sex,is,not married male,AND,
+,,,housing,is,own,...,...,...,...,...,...,...,...,...,...,...,...,THEN,reject,3,0.933333
+
+37,#2448,IF,savings,is,unknown/no savings account or < 100 DM,AND,housing,is not,rent,AND,property,is,car or other,AND,purpose,is,furniture/equipment,AND,
+,,,installment_rate,is not,>= 35,AND,present_residence,is not,< 1 yr,...,...,...,...,...,...,...,...,THEN,accept,17,0.909091
+
+38,#4355,IF,telephone,is,No,AND,property,is not,car or other,AND,foreign_worker,is,No,AND,credit_history,is,no credits taken/all credits paid back duly,AND,
+,,,housing,is,own,AND,other_installment_plans,is not,bank,AND,other_debtors,is not,guarantor,AND,purpose,is,furniture/equipment,AND,
+,,,amount,>=,1799,...,...,...,...,...,...,...,...,...,...,...,...,THEN,accept,15,0.533333
+
+39,#6974,IF,purpose,is not,others and car (used) and furniture/equipment,AND,property,is not,unknown / no property,AND,housing,is not,rent,AND,status,is,... >= 200 DM (salary),AND,
+,,,credit_history,is not,existing credits paid back duly till now,AND,job,is not,management/ self-employed/ highly qualified employee/ officer,AND,present_residence,is,>= 7 yrs,...,...,...,...,THEN,accept,18,0.833333
+
+40,#5559,IF,savings,is,< 100 DM or 100 to 500 DM,AND,status,is,... >= 200 DM (salary),AND,credit_history,is,all credits at this bank paid back duly,AND,employment_duration,is not,unemployed and < 1 yr,THEN,accept,19,0.857143
+
+41,#5588,IF,housing,is not,rent,AND,property,is not,unknown / no property,AND,duration,>=,15,AND,purpose,is not,car (new),AND,
+,,,people_liable,is,0 to 2,AND,job,is not,skilled employee / official and management/ self-employed/ highly qualified employee/ officer,AND,employment_duration,is,unemployed or < 1 yr,AND,telephone,is,Yes,THEN,accept,3,0.818182
+
+42,#2710,IF,housing,is,rent,AND,savings,is,unknown/no savings account or < 100 DM,AND,other_debtors,is,none,AND,property,is not,building soc. savings agr./life insurance,AND,
+,,,personal_status_sex,is,not married male,AND,purpose,is,furniture/equipment,...,...,...,...,...,...,...,...,THEN,accept,13,0.615385
+
+43,#2138,IF,people_liable,is,0 to 2,AND,property,is not,building soc. savings agr./life insurance,AND,purpose,is not,furniture/equipment,AND,savings,is,unknown/no savings account or < 100 DM,AND,
+,,,telephone,is,No,AND,status,is not,no checking account and ... >= 200 DM (salary),AND,number_credits,is not,1,AND,job,is,unskilled - resident,THEN,reject,5,0.909091
+
+44,#6513,IF,installment_rate,is not,25 to 35 and >= 35,AND,property,is not,real estate,AND,personal_status_sex,is,not married male,AND,purpose,is,furniture/equipment,THEN,accept,22,0.875000
+
+45,#5280,IF,telephone,is,Yes,AND,savings,is,unknown/no savings account,AND,purpose,is not,retraining,AND,property,is not,real estate,AND,
+,,,installment_rate,is not,>= 35,AND,number_credits,is,1,AND,age,<=,43,AND,job,is not,management/ self-employed/ highly qualified employee/ officer,THEN,reject,23,0.526316
+
+46,#6597,IF,credit_history,is not,existing credits paid back duly till now,AND,purpose,is,others,AND,job,is not,unskilled - resident,AND,telephone,is,No,AND,
+,,,status,is not,0 to 200 DM and ... >= 200 DM (salary),AND,savings,is,unknown/no savings account or < 100 DM,AND,personal_status_sex,is,married male,AND,present_residence,is,>= 7 yrs,THEN,reject,5,0.916667
+
+47,#9013,IF,other_installment_plans,is,none,AND,purpose,is not,others,AND,credit_history,is,no credits taken/all credits paid back duly,AND,age,<=,23,AND,
+,,,telephone,is,Yes,AND,property,is,real estate,...,...,...,...,...,...,...,...,THEN,accept,6,0.600000
+
+48,#5681,IF,savings,is not,500 to 1000 DM and >= 1000 DM,AND,housing,is,own,AND,credit_history,is not,all credits at this bank paid back duly,AND,other_debtors,is,none,AND,
+,,,purpose,is,car (used),AND,personal_status_sex,is,not married male,AND,job,is not,skilled employee / official,...,...,...,...,THEN,accept,11,0.555556
+
+49,#4186,IF,property,is not,unknown / no property,AND,savings,is,>= 1000 DM,AND,personal_status_sex,is,not married male,AND,purpose,is,car (used),THEN,accept,11,0.600000
+
