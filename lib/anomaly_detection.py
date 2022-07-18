@@ -74,8 +74,8 @@ class LOCIMatrixNew():
         for i in range(self.n_ticks):
             r = i / self.n_ticks * (r_max - r_min) + r_min
             self.rs.append(r)
-            self.update_outer_pointer(self.r)
-            self.update_inner_pointer(r)
+            self.update_outer_pointer(r)
+            self.update_inner_pointer(self.r)
             for p_ix in range(self.n_points):
                 neighbors = self._get_sampling_N(p_ix)
                 n_values = self._get_alpha_n(neighbors)

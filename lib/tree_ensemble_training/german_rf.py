@@ -1,4 +1,3 @@
-from rulematrix.surrogate import rule_surrogate
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
@@ -14,7 +13,7 @@ from sklearn.ensemble import RandomForestClassifier
 from imblearn.over_sampling import SMOTE
 
 def get_model(parameters = None):
-    project_path = '/home/lizhen/projects/extree/exp'
+    project_path = '/home/lizhen/ScalableMatrix'
     random_state = 190
     target = 'credit_risk'
     #random_state = 24
