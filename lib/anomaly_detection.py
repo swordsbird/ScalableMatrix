@@ -8,14 +8,82 @@ from sklearn.covariance import MinCovDet
 from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestNeighbors
 from sklearn.linear_model import LinearRegression
-
-
+from sklearn.metrics import accuracy_score, precision_score, f1_score
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import pairwise_distances
 
 import numpy as np
 import math
 
 from typing import Union
+
+class GlobalDetector():
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+        self.lr = LogisticRegression(class_weight='balanced')
+        self.lr.fit(X, y)
+        y_pred = self.lr.predict(X)
+        print('Accuracy Score is', accuracy_score(y, y_pred))
+        print('Precision Score is', precision_score(y, y_pred))
+        print('F1 Score is', f1_score(y, y_pred))
+        self.coef = self.lr.coef_[0]
+        self.feature_importance = np.abs(self.coef)
+    def update():
+        pass
+
+class LocalDetector():
+    def __init(self, X, y, r = 0.28, metric = 'euclidean', alpha = 0.5, y_alpha = 0.6):
+        self.X = X
+        self.y = y
+        self.r = r
+        self.alpha = alpha
+        self.n_points = self.X.shape[0]
+        self.indice = None
+        self.dist_matrix = pairwise_distances(X = self.X, metric=metric)
+        output_dist = np.array([y[i] != y for i in range(self.n_points)])
+        max_dist = self.dist_matrix.max()
+        self.dist_matrix /= max_dist
+        self.dist_matrix = self.dist_matrix * (1 - y_alpha) + output_dist * y_alpha
+        self.sorted_neighbors = np.argsort(self.dist_matrix, axis=1)
+        self.sorted_dist = np.sort(self.dist_matrix, axis=1)
+        self.outer_ptr = np.zeros(self.n_points).astype(int)
+        self.inner_ptr = np.zeros(self.n_points).astype(int)
+
+    def update_outer_pointer(self, r):
+        ptr = self.outer_ptr
+        for i in range(self.n_points):
+            ptr[i] = np.searchsorted(self.sorted_dist[i], r, side='right')
+
+    def _get_sampling_N(self, p_ix: int):
+        return self.sorted_neighbors[p_ix][:self.outer_ptr[p_ix]]
+
+    def _get_alpha_n(self, indices: Union[int, np.ndarray]):
+        return self.inner_ptr[indices]
+
+    def get_score(self, r):
+        self.update_outer_pointer(r)
+        self.update_inner_pointer(r * self.alpha)
+        ret = []
+        for p_ix in range(self.n_points):
+            neighbors = self._get_sampling_N(p_ix)
+            n_values = self._get_alpha_n(neighbors)
+            cur_alpha_n = self._get_alpha_n(p_ix)
+
+            n_hat = np.mean(n_values)
+            mdef = 1 - (cur_alpha_n / n_hat)
+            sigma_mdef = np.std(n_values) / n_hat
+            score = 0
+            if len(neighbors) >= 20:
+                if sigma_mdef > 0:
+                    score = mdef / sigma_mdef
+            ret.append(score)
+        return ret
+
+class MixedDetector():
+    def __init__(self, data, ):
+        pass
+        
 
 class LOCIMatrixNew():
     ''' the inner radius is fixed, and the outer radius is variable. '''

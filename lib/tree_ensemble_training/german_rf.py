@@ -13,7 +13,7 @@ from sklearn.ensemble import RandomForestClassifier
 from imblearn.over_sampling import SMOTE
 
 def get_model(parameters = None):
-    project_path = '/home/lizhen/ScalableMatrix'
+    project_path = '/home/lizhen/projects/scalable_matrix'
     random_state = 190
     target = 'credit_risk'
     #random_state = 24
