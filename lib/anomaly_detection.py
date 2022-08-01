@@ -11,22 +11,31 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import accuracy_score, precision_score, f1_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import pairwise_distances
-
-import numpy as np
 import math
 
 from typing import Union
 
-class GlobalDetector():
+class BaseDetector():
     def __init__(self, X, y):
         self.X = X
         self.y = y
+        self.w = None
+
+    def set_attr(self, attr):
+        self.attr = attr
+
+    def grad(self):
+        raise NotImplementedError()
+
+    def update(self, eta = 1.0):
+        self.w = self.w + self.grad() * eta
+
+class GlobalDetector(BaseDetector):
+    def __init__(self, X, y):
+        super().__init__(X, y)
         self.lr = LogisticRegression(class_weight='balanced')
         self.lr.fit(X, y)
         y_pred = self.lr.predict(X)
-        print('Accuracy Score is', accuracy_score(y, y_pred))
-        print('Precision Score is', precision_score(y, y_pred))
-        print('F1 Score is', f1_score(y, y_pred))
         self.coef = self.lr.coef_[0]
         self.feature_importance = np.abs(self.coef)
     def update():
